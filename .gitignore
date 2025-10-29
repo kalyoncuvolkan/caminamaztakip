@@ -1,0 +1,66 @@
+# PHP
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Database backup
+*.sql.bak
+backup/
+
+# Temporary files
+tmp/
+temp/
+cache/
+
+# User uploads
+uploads/
+files/
+
+# Config files (if they contain sensitive data)
+# config/db.php
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# PHP Composer
+vendor/
+composer.lock
+
+# Node.js (if used)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Test coverage
+coverage/
+
+# Documentation build
+docs/_build/
