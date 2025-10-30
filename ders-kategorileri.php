@@ -106,9 +106,11 @@ $kategoriler = $pdo->query("SELECT * FROM ders_kategorileri ORDER BY sira, kateg
                             </span>
                         </td>
                         <td>
-                            <button onclick="duzenle(<?php echo $kat['id']; ?>)" class="btn-sm btn-edit">✏️ Düzenle</button>
-                            <a href="dersler.php?kategori=<?php echo $kat['id']; ?>" class="btn-sm" style="background: #17a2b8; color: white;">📖 Dersleri Gör</a>
-                            <button onclick="sil(<?php echo $kat['id']; ?>, '<?php echo htmlspecialchars($kat['kategori_adi']); ?>')" class="btn-sm btn-delete">🗑️ Sil</button>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button onclick="duzenle(<?php echo $kat['id']; ?>)" class="btn-sm" style="background: #ffc107; color: #000; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;" title="Düzenle">✏️ Düzenle</button>
+                                <a href="dersler.php?kategori=<?php echo $kat['id']; ?>" class="btn-sm" style="background: #17a2b8; color: white; text-decoration: none; padding: 6px 12px; border-radius: 5px; display: inline-block; font-size: 14px; white-space: nowrap;" title="Dersleri Görüntüle">📖 Dersler</a>
+                                <button onclick="sil(<?php echo $kat['id']; ?>, '<?php echo htmlspecialchars($kat['kategori_adi']); ?>')" class="btn-sm" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-size: 14px; white-space: nowrap;" title="Sil">🗑️ Sil</button>
+                            </div>
                         </td>
                     </tr>
                     <?php endforeach; ?>
