@@ -42,9 +42,12 @@ $ogrenciler = $pdo->query("SELECT * FROM ogrenciler ORDER BY ad_soyad")->fetchAl
             <h1>🕌 Cami Namaz Takip Programı</h1>
             <nav>
                 <a href="index.php" class="active">Ana Sayfa</a>
-                <a href="ogrenci-ekle.php">Öğrenci Ekle</a>
-                <a href="namaz-ekle-yeni.php">Namaz Ekle</a>
-                <a href="genel-rapor.php">Genel Rapor</a>
+                <a href="ogrenciler.php">👥 Öğrenciler</a>
+                <a href="namaz-ekle-yeni.php">🕌 Namaz Ekle</a>
+                <a href="ders-kategorileri.php">📚 Dersler</a>
+                <a href="sertifikalar.php">📜 Sertifikalar</a>
+                <a href="genel-rapor.php">📊 Raporlar</a>
+                <a href="yedekleme.php">💾 Yedekleme</a>
                 <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
             </nav>
         </header>
