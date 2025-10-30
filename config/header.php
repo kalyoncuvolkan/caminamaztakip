@@ -107,6 +107,7 @@
                     <a href="puan-yonetimi.php" class="<?php echo ($aktif_sayfa ?? '') == 'puan' ? 'active' : ''; ?>">⭐ Puan Yönetimi</a>
                     <a href="ders-kategorileri.php" class="<?php echo ($aktif_sayfa ?? '') == 'dersler' ? 'active' : ''; ?>">📚 Dersler</a>
                     <a href="sertifikalar.php" class="<?php echo ($aktif_sayfa ?? '') == 'sertifikalar' ? 'active' : ''; ?>">📜 Sertifikalar</a>
+                    <a href="mesajlar.php" class="<?php echo ($aktif_sayfa ?? '') == 'mesajlar' ? 'active' : ''; ?>">💬 Mesajlar</a>
                     <a href="genel-rapor.php" class="<?php echo ($aktif_sayfa ?? '') == 'raporlar' ? 'active' : ''; ?>">📊 Raporlar</a>
                     <a href="yedekleme.php" class="<?php echo ($aktif_sayfa ?? '') == 'yedekleme' ? 'active' : ''; ?>">💾 Yedekleme</a>
                 </div>
