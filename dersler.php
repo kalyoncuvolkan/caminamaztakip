@@ -21,7 +21,16 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ders_ekle'])) {
 }
 
 $kategoriler = $pdo->query("SELECT * FROM ders_kategorileri WHERE aktif = 1 ORDER BY sira")->fetchAll();
-$dersler = $pdo->query("SELECT d.*, dk.kategori_adi FROM dersler d JOIN ders_kategorileri dk ON d.kategori_id = dk.id ORDER BY dk.sira, d.sira")->fetchAll();
+
+// Dersler ve tamamlanma istatistikleri
+$dersler = $pdo->query("
+    SELECT d.*, dk.kategori_adi,
+           (SELECT COUNT(*) FROM ogrenci_dersler od WHERE od.ders_id = d.id AND od.durum = 'Tamamlandi') as tamamlanan,
+           (SELECT COUNT(*) FROM ogrenci_dersler od WHERE od.ders_id = d.id) as toplam
+    FROM dersler d
+    JOIN ders_kategorileri dk ON d.kategori_id = dk.id
+    ORDER BY dk.sira, d.sira
+")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="tr">
@@ -66,16 +75,29 @@ $dersler = $pdo->query("SELECT d.*, dk.kategori_adi FROM dersler d JOIN ders_kat
 
             <h3>📚 Ders Listesi</h3>
             <table>
-                <thead><tr><th>Kategori</th><th>Ders Adı</th><th>Puan</th><th>Sıra</th><th>İşlemler</th></tr></thead>
+                <thead><tr><th>Kategori</th><th>Ders Adı</th><th>Puan</th><th>Sıra</th><th>Durum</th><th>İşlemler</th></tr></thead>
                 <tbody>
-                    <?php foreach($dersler as $d): ?>
+                    <?php foreach($dersler as $d):
+                        $tamamlanma_yuzdesi = $d['toplam'] > 0 ? round(($d['tamamlanan'] / $d['toplam']) * 100) : 0;
+                        $durum_renk = $tamamlanma_yuzdesi == 100 ? '#28a745' : ($tamamlanma_yuzdesi > 0 ? '#ffc107' : '#dc3545');
+                    ?>
                     <tr>
                         <td><?php echo $d['kategori_adi']; ?></td>
                         <td><strong><?php echo htmlspecialchars($d['ders_adi']); ?></strong></td>
                         <td>+<?php echo $d['puan']; ?></td>
                         <td><?php echo $d['sira']; ?></td>
                         <td>
-                            <a href="ders-takip.php?ders=<?php echo $d['id']; ?>" class="btn-sm" style="background: #28a745; color: white;">✓ Tamamlananlar</a>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="flex: 1; background: #e9ecef; border-radius: 10px; height: 20px; overflow: hidden;">
+                                    <div style="width: <?php echo $tamamlanma_yuzdesi; ?>%; background: <?php echo $durum_renk; ?>; height: 100%; transition: width 0.3s;"></div>
+                                </div>
+                                <span style="min-width: 80px; font-weight: bold; color: <?php echo $durum_renk; ?>;">
+                                    <?php echo $d['tamamlanan']; ?>/<?php echo $d['toplam']; ?> (%<?php echo $tamamlanma_yuzdesi; ?>)
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <a href="ders-takip.php?ders=<?php echo $d['id']; ?>" class="btn-sm" style="background: #007bff; color: white; text-decoration: none; padding: 8px 15px; border-radius: 5px; display: inline-block;" title="Ders Takibi">📋 Detay</a>
                         </td>
                     </tr>
                     <?php endforeach; ?>
