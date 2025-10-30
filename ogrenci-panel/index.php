@@ -108,6 +108,7 @@ $aylik_namazlar = $aylara_gore->fetchAll();
                 <a href="index.php" class="active">Panel</a>
                 <a href="raporlarim.php">Raporlarım</a>
                 <a href="sertifikalarim.php">Sertifikalarım</a>
+                <a href="sifre-degistir.php">🔒 Şifre Değiştir</a>
                 <a href="logout.php" style="margin-left: auto">Çıkış</a>
             </nav>
         </header>

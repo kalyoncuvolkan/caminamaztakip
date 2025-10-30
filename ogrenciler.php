@@ -235,6 +235,7 @@ require_once 'config/header.php';
                                 <button onclick="ogrenciDetay(<?php echo $ogrenci['id']; ?>)" class="btn-sm" style="background: #17a2b8; color: white;">👁️ Görüntüle</button>
                                 <a href="ogrenci-duzenle.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm btn-edit">✏️ Düzenle</a>
                                 <a href="ozel-rapor.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm" style="background: #007bff; color: white;">📊 Rapor</a>
+                                <button onclick="sifreSifirla(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>')" class="btn-sm" style="background: #ffc107; color: #000;">🔒 Şifre Sıfırla</button>
                                 <button onclick="ogrenciSil(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>')" class="btn-sm btn-delete">🗑️ Sil</button>
                             </div>
                         </td>
@@ -300,6 +301,37 @@ require_once 'config/header.php';
                         }
                     });
                 }
+            }
+        }
+
+        function sifreSifirla(id, adSoyad) {
+            if(confirm('🔒 ' + adSoyad + ' için yeni şifre oluşturulsun mu?\n\nEski şifre geçersiz olacaktır.')) {
+                fetch('api/sifre-sifirla.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'ogrenci_id=' + id
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        const message = `✅ Şifre başarıyla sıfırlandı!\n\n` +
+                            `Öğrenci: ${data.ad_soyad}\n` +
+                            `Kullanıcı Adı: ${data.kullanici_adi}\n` +
+                            `Yeni Şifre: ${data.yeni_sifre}\n\n` +
+                            `⚠️ Bu bilgileri öğrenciye iletiniz!`;
+                        alert(message);
+
+                        // Kopyala seçeneği sun
+                        if(confirm('📋 Bilgileri panoya kopyalamak ister misiniz?')) {
+                            const copyText = `Öğrenci: ${data.ad_soyad}\nKullanıcı Adı: ${data.kullanici_adi}\nYeni Şifre: ${data.yeni_sifre}`;
+                            navigator.clipboard.writeText(copyText).then(() => {
+                                alert('✅ Bilgiler kopyalandı!');
+                            });
+                        }
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                });
             }
         }
 
