@@ -7,50 +7,31 @@ $yil = date('Y');
 $ay = date('n');
 
 $yillikBirinci = $pdo->prepare("
-    SELECT ad_soyad, toplam_namaz 
-    FROM yillik_ozetler 
-    WHERE yil = ? 
-    ORDER BY toplam_namaz DESC 
+    SELECT ad_soyad, toplam_namaz
+    FROM yillik_ozetler
+    WHERE yil = ?
+    ORDER BY toplam_namaz DESC
     LIMIT 3
 ");
 $yillikBirinci->execute([$yil]);
 $yillikSiralama = $yillikBirinci->fetchAll();
 
 $aylikBirinci = $pdo->prepare("
-    SELECT ad_soyad, toplam_namaz 
-    FROM aylik_ozetler 
-    WHERE yil = ? AND ay = ? 
-    ORDER BY toplam_namaz DESC 
+    SELECT ad_soyad, toplam_namaz
+    FROM aylik_ozetler
+    WHERE yil = ? AND ay = ?
+    ORDER BY toplam_namaz DESC
     LIMIT 3
 ");
 $aylikBirinci->execute([$yil, $ay]);
 $aylikSiralama = $aylikBirinci->fetchAll();
 
-$ogrenciler = $pdo->query("SELECT * FROM ogrenciler ORDER BY ad_soyad")->fetchAll();
+$ogrenciler = $pdo->query("SELECT * FROM ogrenciler WHERE aktif = 1 ORDER BY ad_soyad")->fetchAll();
+
+$aktif_sayfa = 'index';
+$sayfa_basligi = 'Ana Sayfa - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cami Namaz Takip Programı</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php" class="active">Ana Sayfa</a>
-                <a href="ogrenciler.php">👥 Öğrenciler</a>
-                <a href="namaz-ekle-yeni.php">🕌 Namaz Ekle</a>
-                <a href="ders-kategorileri.php">📚 Dersler</a>
-                <a href="sertifikalar.php">📜 Sertifikalar</a>
-                <a href="genel-rapor.php">📊 Raporlar</a>
-                <a href="yedekleme.php">💾 Yedekleme</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div class="dashboard">
             <div class="skor-tablosu">
@@ -120,34 +101,33 @@ $ogrenciler = $pdo->query("SELECT * FROM ogrenciler ORDER BY ad_soyad")->fetchAl
                 </tbody>
             </table>
         </div>
+
+<div id="ogrenci-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <div id="modal-body"></div>
     </div>
+</div>
 
-    <div id="ogrenci-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div id="modal-body"></div>
-        </div>
-    </div>
+<script>
+    function ogrenciDetay(id) {
+        fetch('api/ogrenci-detay.php?id=' + id)
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('modal-body').innerHTML = html;
+                document.getElementById('ogrenci-modal').style.display = 'block';
+            });
+    }
 
-    <script>
-        function ogrenciDetay(id) {
-            fetch('api/ogrenci-detay.php?id=' + id)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('modal-body').innerHTML = html;
-                    document.getElementById('ogrenci-modal').style.display = 'block';
-                });
-        }
+    document.getElementsByClassName('close')[0].onclick = function() {
+        document.getElementById('ogrenci-modal').style.display = 'none';
+    }
 
-        document.getElementsByClassName('close')[0].onclick = function() {
+    window.onclick = function(event) {
+        if (event.target == document.getElementById('ogrenci-modal')) {
             document.getElementById('ogrenci-modal').style.display = 'none';
         }
+    }
+</script>
 
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('ogrenci-modal')) {
-                document.getElementById('ogrenci-modal').style.display = 'none';
-            }
-        }
-    </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>
