@@ -4,21 +4,23 @@ checkAuth();
 require_once 'config/db.php';
 
 $olusturulan_kullanici = null;
+$hata_mesaji = null;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $ad_soyad = $_POST['ad_soyad'];
-    $dogum_tarihi = $_POST['dogum_tarihi'];
-    $baba_adi = $_POST['baba_adi'];
-    $anne_adi = $_POST['anne_adi'];
-    $baba_telefonu = $_POST['baba_telefonu'];
-    $anne_telefonu = $_POST['anne_telefonu'];
-    $yas = yasHesapla($dogum_tarihi);
+    try {
+        $ad_soyad = $_POST['ad_soyad'];
+        $dogum_tarihi = $_POST['dogum_tarihi'];
+        $baba_adi = $_POST['baba_adi'];
+        $anne_adi = $_POST['anne_adi'];
+        $baba_telefonu = $_POST['baba_telefonu'];
+        $anne_telefonu = $_POST['anne_telefonu'];
+        $yas = yasHesapla($dogum_tarihi);
 
-    // Öğrenciyi ekle
-    $stmt = $pdo->prepare("INSERT INTO ogrenciler (ad_soyad, dogum_tarihi, yas, baba_adi, anne_adi, baba_telefonu, anne_telefonu) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$ad_soyad, $dogum_tarihi, $yas, $baba_adi, $anne_adi, $baba_telefonu, $anne_telefonu]);
+        // Öğrenciyi ekle
+        $stmt = $pdo->prepare("INSERT INTO ogrenciler (ad_soyad, dogum_tarihi, yas, baba_adi, anne_adi, baba_telefonu, anne_telefonu) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$ad_soyad, $dogum_tarihi, $yas, $baba_adi, $anne_adi, $baba_telefonu, $anne_telefonu]);
 
-    $ogrenci_id = $pdo->lastInsertId();
+        $ogrenci_id = $pdo->lastInsertId();
 
     // Otomatik kullanıcı adı oluştur (ad soyad + son 4 rakam)
     $ad_parts = explode(' ', $ad_soyad);
@@ -53,13 +55,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $pdo->prepare("INSERT IGNORE INTO ogrenci_dersler (ogrenci_id, ders_id) VALUES (?, ?)")->execute([$ogrenci_id, $ders['id']]);
     }
 
-    $olusturulan_kullanici = [
-        'ad_soyad' => $ad_soyad,
-        'kullanici_adi' => $kullanici_adi,
-        'sifre' => $sifre
-    ];
+        $olusturulan_kullanici = [
+            'ad_soyad' => $ad_soyad,
+            'kullanici_adi' => $kullanici_adi,
+            'sifre' => $sifre
+        ];
 
-    $mesaj = "Öğrenci başarıyla eklendi ve otomatik kullanıcı oluşturuldu!";
+        $mesaj = "Öğrenci başarıyla eklendi ve otomatik kullanıcı oluşturuldu!";
+    } catch (Exception $e) {
+        $hata_mesaji = "Hata oluştu: " . $e->getMessage();
+    }
 }
 
 // Türkçe karakterleri İngilizce'ye çevir
@@ -89,6 +94,12 @@ require_once 'config/header.php';
 
             <?php if(isset($mesaj)): ?>
             <div class="alert success"><?php echo $mesaj; ?></div>
+            <?php endif; ?>
+
+            <?php if($hata_mesaji): ?>
+            <div class="alert" style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px solid #f5c6cb;">
+                <strong>❌ Hata:</strong> <?php echo htmlspecialchars($hata_mesaji); ?>
+            </div>
             <?php endif; ?>
 
             <?php if($olusturulan_kullanici): ?>
