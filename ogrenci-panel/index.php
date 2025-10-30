@@ -172,7 +172,7 @@ $aylik_namazlar = $aylara_gore->fetchAll();
                 </div>
 
                 <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; border: 2px solid #ffc107;">
-                    <h3 style="margin: 0 0 15px 0; color: #ffc107;">🎯 <?php echo date('F'); ?> Ayı Sıralaman</h3>
+                    <h3 style="margin: 0 0 15px 0; color: #ffc107;">🎯 <?php echo ayAdi($ay); ?> Ayı Sıralaman</h3>
                     <?php if($aylik): ?>
                     <p style="font-size: 48px; margin: 10px 0; font-weight: bold; color: #ffc107;">
                         #<?php echo $aylik['siralama']; ?>
