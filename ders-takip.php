@@ -45,24 +45,11 @@ $ogrenciler = $pdo->prepare("
 ");
 $ogrenciler->execute([$ders_id]);
 $ogr_list = $ogrenciler->fetchAll();
+
+$aktif_sayfa = 'dersler';
+$sayfa_basligi = 'Ders Takip - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Ders Takip - <?php echo $ders_bilgi['ders_adi']; ?></title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="dersler.php">Dersler</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div style="padding: 30px;">
             <h2>📖 <?php echo $ders_bilgi['ders_adi']; ?> - Ders Takibi</h2>
@@ -91,6 +78,4 @@ $ogr_list = $ogrenciler->fetchAll();
                 </tbody>
             </table>
         </div>
-    </div>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

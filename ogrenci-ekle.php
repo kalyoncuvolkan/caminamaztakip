@@ -17,27 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     
     $mesaj = "Öğrenci başarıyla eklendi!";
 }
+
+$aktif_sayfa = 'ogrenciler';
+$sayfa_basligi = 'Öğrenci Ekle - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Öğrenci Ekle - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenci-ekle.php" class="active">Öğrenci Ekle</a>
-                <a href="namaz-ekle-yeni.php">Namaz Ekle</a>
-                <a href="genel-rapor.php">Genel Rapor</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div class="form-container">
             <h2>👤 Yeni Öğrenci Ekle</h2>
@@ -81,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <button type="submit" class="btn-primary">Öğrenciyi Kaydet</button>
             </form>
         </div>
-    </div>
 
     <script>
         function yasHesapla() {
@@ -91,14 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 var dogum = new Date(dogumTarihi);
                 var yas = bugun.getFullYear() - dogum.getFullYear();
                 var ay = bugun.getMonth() - dogum.getMonth();
-                
+
                 if (ay < 0 || (ay === 0 && bugun.getDate() < dogum.getDate())) {
                     yas--;
                 }
-                
+
                 document.getElementById('yas-goster').innerHTML = ' (Yaş: ' + yas + ')';
             }
         }
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

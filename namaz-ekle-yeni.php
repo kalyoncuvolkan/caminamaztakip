@@ -37,14 +37,11 @@ $bugunKayitlar = $pdo->prepare("
 ");
 $bugunKayitlar->execute([$bugun]);
 $kayitlar = $bugunKayitlar->fetchAll();
+
+$aktif_sayfa = 'namaz';
+$sayfa_basligi = 'Namaz Ekle - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Namaz Ekle - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
     <style>
         .wizard-container {
             max-width: 800px;
@@ -214,21 +211,7 @@ $kayitlar = $bugunKayitlar->fetchAll();
             box-shadow: none;
         }
     </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenci-ekle.php">Öğrenci Ekle</a>
-                <a href="namaz-ekle-yeni.php" class="active">Namaz Ekle</a>
-                <a href="genel-rapor.php">Genel Rapor</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
-
-        <div class="wizard-container">
+    <div class="wizard-container">
             <?php if($mesaj): ?>
             <div class="alert success"><?php echo $mesaj; ?></div>
             <?php endif; ?>
@@ -387,7 +370,6 @@ $kayitlar = $bugunKayitlar->fetchAll();
                 <?php endif; ?>
             </div>
         </div>
-    </div>
 
     <script>
         let aramaTimeout;
@@ -518,5 +500,4 @@ $kayitlar = $bugunKayitlar->fetchAll();
             }
         });
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>
