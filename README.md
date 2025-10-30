@@ -73,12 +73,12 @@ cami-namaz-takip/
 ## ⚡ Hızlı Başlangıç
 
 ### 1. Gereksinimler
-- PHP 8.1 veya üzeri
-- MySQL 8.0 veya üzeri
+- PHP 7.4 veya üzeri
+- MySQL 5.7 veya üzeri
 - Apache/Nginx web sunucusu
 - Modern web tarayıcı
 
-### 2. Kurulum
+### 2. Otomatik Kurulum (ÖNERİLEN)
 ```bash
 # Projeyi klonlayın
 git clone https://github.com/kalyoncuvolkan/caminamaztakip.git
@@ -86,29 +86,34 @@ git clone https://github.com/kalyoncuvolkan/caminamaztakip.git
 # Web sunucunuzun dizinine taşıyın
 cp -r caminamaztakip /var/www/html/cami
 
-# Veritabanını oluşturun
-mysql -u root -p < database.sql
+# Tarayıcınızda kurulum sihirbazını açın
+# http://your-domain.com/install.php
 
-# Kullanıcı oluşturun
-php create_users.php
+# Kurulum adımlarını takip edin:
+# 1. Adım: Veritabanı bilgilerini girin
+# 2. Adım: Tabloları oluşturun
+# 3. Adım: Yönetici hesabı oluşturun
 
-# Test verilerini ekleyin (opsiyonel)
-php test_data.php
+# Kurulum sonrası GÜVENLİK için install.php dosyasını silin!
+rm install.php
 ```
 
-### 3. Yapılandırma
-`config/db.php` dosyasında veritabanı ayarlarınızı güncelleyin:
+### 3. Manuel Kurulum (Gelişmiş)
+```bash
+# Veritabanını oluşturun
+mysql -u root -p -e "CREATE DATABASE cami_namaz_takip CHARACTER SET utf8mb4 COLLATE utf8mb4_turkish_ci"
 
-```php
-$host = 'localhost';
-$dbname = 'cami_namaz_takip';
-$username = 'your_username';
-$password = 'your_password';
+# Tabloları oluşturun
+mysql -u root -p cami_namaz_takip < install_schema.sql
+
+# config/db.php dosyasını manuel oluşturun
+# (Otomatik kurulum bunu sizin için yapar)
 ```
 
 ### 4. Erişim
-- Tarayıcınızda `http://localhost/cami` adresine gidin
-- Varsayılan kullanıcı bilgileriyle giriş yapın
+- **Yönetici Paneli**: `http://localhost/cami`
+- **Öğrenci Paneli**: `http://localhost/cami/ogrenci-panel`
+- Kurulumda oluşturduğunuz kullanıcı bilgileriyle giriş yapın
 
 ## 🎯 Kullanım Rehberi
 
