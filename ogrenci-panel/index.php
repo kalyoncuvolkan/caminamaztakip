@@ -106,6 +106,7 @@ $aylik_namazlar = $aylara_gore->fetchAll();
             <h1>🕌 Öğrenci Paneli</h1>
             <nav>
                 <a href="index.php" class="active">Panel</a>
+                <a href="mesajlarim.php">💬 Mesajlarım</a>
                 <a href="raporlarim.php">Raporlarım</a>
                 <a href="sertifikalarim.php">Sertifikalarım</a>
                 <a href="sifre-degistir.php">🔒 Şifre Değiştir</a>
@@ -118,8 +119,11 @@ $aylik_namazlar = $aylara_gore->fetchAll();
 
             <!-- Okunmamış Mesajlar -->
             <?php if(count($okunmamis_mesajlar) > 0): ?>
-            <div style="margin: 20px 0;">
-                <h3>📬 Mesajlarım (<?php echo count($okunmamis_mesajlar); ?> Okunmamış)</h3>
+            <div style="margin: 20px 0; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">📬 Yeni Mesajlarınız (<?php echo count($okunmamis_mesajlar); ?> Okunmamış)</h3>
+                    <a href="mesajlarim.php" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Tümünü Gör</a>
+                </div>
                 <?php foreach($okunmamis_mesajlar as $msg): ?>
                 <div class="alert" style="background: <?php echo $msg['oncelik']=='Acil'?'#f8d7da':($msg['oncelik']=='Önemli'?'#fff3cd':'#d1ecf1'); ?>; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid <?php echo $msg['oncelik']=='Acil'?'#dc3545':($msg['oncelik']=='Önemli'?'#ffc107':'#17a2b8'); ?>;">
                     <strong><?php echo $msg['oncelik']=='Acil'?'🚨':($msg['oncelik']=='Önemli'?'⚠️':'📝'); ?> <?php echo $msg['oncelik']; ?> Mesaj:</strong><br>

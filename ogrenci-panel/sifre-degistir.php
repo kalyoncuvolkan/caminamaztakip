@@ -136,6 +136,7 @@ $ogrenci = $ogr->fetch();
             <h1>🕌 Öğrenci Paneli</h1>
             <nav>
                 <a href="index.php">Panel</a>
+                <a href="mesajlarim.php">💬 Mesajlarım</a>
                 <a href="raporlarim.php">Raporlarım</a>
                 <a href="sertifikalarim.php">Sertifikalarım</a>
                 <a href="sifre-degistir.php" class="active">Şifre Değiştir</a>
