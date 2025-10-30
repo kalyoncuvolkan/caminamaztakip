@@ -1,0 +1,39 @@
+# Cami Namaz Takip Programı - Robots.txt
+# Bu sistem dahili kullanım içindir ve arama motorları tarafından indexlenmemelidir.
+
+User-agent: *
+Disallow: /
+
+# Tüm arama motorları için
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Googlebot-Image
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Slurp
+Disallow: /
+
+User-agent: DuckDuckBot
+Disallow: /
+
+User-agent: Baiduspider
+Disallow: /
+
+User-agent: YandexBot
+Disallow: /
+
+# Özel dizinler (ekstra güvenlik)
+User-agent: *
+Disallow: /config/
+Disallow: /api/
+Disallow: /install.php
+Disallow: /install_schema.sql
+Disallow: /ogrenci-panel/
+Disallow: /*.php$
+
+# Sitemap yok (dahili sistem)
+Sitemap: none
