@@ -12,7 +12,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->execute([$kullanici_adi]);
     $kullanici = $stmt->fetch();
 
-    if($kullanici && password_verify($sifre, $kullanici['sifre'])) {
+    if($kullanici && password_verify($sifre, $kullanici['parola_hash'])) {
         $_SESSION['ogrenci_id'] = $kullanici['ogrenci_id'];
         $_SESSION['ogrenci_kullanici_adi'] = $kullanici['kullanici_adi'];
         header('Location: index.php');

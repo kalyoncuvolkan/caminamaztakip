@@ -18,11 +18,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $yeni_sifre_tekrar = $_POST['yeni_sifre_tekrar'];
 
     // Mevcut şifreyi kontrol et
-    $stmt = $pdo->prepare("SELECT sifre FROM ogrenci_kullanicilar WHERE ogrenci_id = ?");
+    $stmt = $pdo->prepare("SELECT parola_hash FROM ogrenci_kullanicilar WHERE ogrenci_id = ?");
     $stmt->execute([$ogrenci_id]);
     $kullanici = $stmt->fetch();
 
-    if(!password_verify($eski_sifre, $kullanici['sifre'])) {
+    if(!password_verify($eski_sifre, $kullanici['parola_hash'])) {
         $hata = 'Mevcut şifreniz hatalı!';
     } elseif($yeni_sifre !== $yeni_sifre_tekrar) {
         $hata = 'Yeni şifreler eşleşmiyor!';
@@ -31,7 +31,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         // Şifreyi güncelle
         $sifre_hash = password_hash($yeni_sifre, PASSWORD_DEFAULT);
-        $update = $pdo->prepare("UPDATE ogrenci_kullanicilar SET sifre = ? WHERE ogrenci_id = ?");
+        $update = $pdo->prepare("UPDATE ogrenci_kullanicilar SET parola_hash = ? WHERE ogrenci_id = ?");
         $update->execute([$sifre_hash, $ogrenci_id]);
 
         $mesaj = 'Şifreniz başarıyla değiştirildi!';

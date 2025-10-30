@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sifre_hash = password_hash($sifre, PASSWORD_DEFAULT);
 
     // Öğrenci kullanıcısı oluştur
-    $stmt = $pdo->prepare("INSERT INTO ogrenci_kullanicilar (ogrenci_id, kullanici_adi, sifre) VALUES (?, ?, ?)");
+    $stmt = $pdo->prepare("INSERT INTO ogrenci_kullanicilar (ogrenci_id, kullanici_adi, parola_hash) VALUES (?, ?, ?)");
     $stmt->execute([$ogrenci_id, $kullanici_adi, $sifre_hash]);
 
     // Aktif dersleri öğrenciye ata

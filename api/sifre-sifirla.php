@@ -42,7 +42,7 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
     $sifre_hash = password_hash($yeni_sifre, PASSWORD_DEFAULT);
 
     // Şifreyi güncelle
-    $update = $pdo->prepare("UPDATE ogrenci_kullanicilar SET sifre = ? WHERE ogrenci_id = ?");
+    $update = $pdo->prepare("UPDATE ogrenci_kullanicilar SET parola_hash = ? WHERE ogrenci_id = ?");
     $update->execute([$sifre_hash, $ogrenci_id]);
 
     echo json_encode([
