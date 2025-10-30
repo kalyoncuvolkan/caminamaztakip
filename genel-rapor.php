@@ -34,27 +34,11 @@ foreach($raporlar as $rapor) {
 }
 
 $yillar = $pdo->query("SELECT DISTINCT YEAR(tarih) as yil FROM namaz_kayitlari ORDER BY yil DESC")->fetchAll();
+
+$aktif_sayfa = 'raporlar';
+$sayfa_basligi = 'Genel Rapor - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Genel Rapor - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenci-ekle.php">Öğrenci Ekle</a>
-                <a href="namaz-ekle-yeni.php">Namaz Ekle</a>
-                <a href="genel-rapor.php" class="active">Genel Rapor</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div class="rapor-container">
             <h2>📊 Genel Aylık Rapor</h2>
@@ -154,5 +138,4 @@ $yillar = $pdo->query("SELECT DISTINCT YEAR(tarih) as yil FROM namaz_kayitlari O
             document.body.removeChild(downloadLink);
         }
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

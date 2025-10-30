@@ -41,27 +41,11 @@ if(isset($_GET['sil'])) {
 
 // Kategorileri listele
 $kategoriler = $pdo->query("SELECT * FROM ders_kategorileri ORDER BY sira, kategori_adi")->fetchAll();
+
+$aktif_sayfa = 'dersler';
+$sayfa_basligi = 'Ders Kategorileri - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ders Kategorileri - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenciler.php">Öğrenciler</a>
-                <a href="ders-kategorileri.php" class="active">Ders Kategorileri</a>
-                <a href="dersler.php">Dersler</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div style="padding: 30px;">
             <h2>📚 Ders Kategorileri Yönetimi</h2>
@@ -174,5 +158,4 @@ $kategoriler = $pdo->query("SELECT * FROM ders_kategorileri ORDER BY sira, kateg
             document.getElementById('duzenle-modal').style.display = 'none';
         }
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

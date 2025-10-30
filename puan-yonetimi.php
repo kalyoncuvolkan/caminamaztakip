@@ -47,24 +47,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ilave_puan_ekle'])) {
     header("Location: puan-yonetimi.php?id=$ogrenci_id");
     exit;
 }
+
+$aktif_sayfa = 'puan';
+$sayfa_basligi = 'Puan Yönetimi - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Puan Yönetimi - <?php echo $ogrenci['ad_soyad']; ?></title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenciler.php">Öğrenciler</a>
-                <a href="logout.php" style="margin-left: auto">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div style="padding: 30px;">
             <h2>⭐ Puan Yönetimi: <?php echo $ogrenci['ad_soyad']; ?></h2>
@@ -164,5 +151,4 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ilave_puan_ekle'])) {
             }
         }
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

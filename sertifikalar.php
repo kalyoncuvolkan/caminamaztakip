@@ -12,25 +12,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['sertifika_olustur'])) {
 
 $ogrenciler = $pdo->query("SELECT id, ad_soyad FROM ogrenciler WHERE aktif = 1 ORDER BY ad_soyad")->fetchAll();
 $sertifikalar = $pdo->query("SELECT s.*, o.ad_soyad FROM sertifikalar s JOIN ogrenciler o ON s.ogrenci_id = o.id ORDER BY s.tarih DESC")->fetchAll();
+
+$aktif_sayfa = 'sertifikalar';
+$sayfa_basligi = 'Sertifikalar - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Sertifikalar - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenciler.php">Öğrenciler</a>
-                <a href="sertifikalar.php" class="active">Sertifikalar</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div style="padding: 30px;">
             <h2>📜 Sertifika Yönetimi</h2>
@@ -81,5 +67,4 @@ $sertifikalar = $pdo->query("SELECT s.*, o.ad_soyad FROM sertifikalar s JOIN ogr
         window.open('sertifika-yazdir.php?id=' + id, '_blank');
     }
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

@@ -25,24 +25,11 @@ if(isset($_GET['yedek'])) {
 // Mevcut yedekler
 $yedekler = glob('backup/*.sql');
 rsort($yedekler);
+
+$aktif_sayfa = 'yedekleme';
+$sayfa_basligi = 'Yedekleme - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Yedekleme - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="yedekleme.php" class="active">Yedekleme</a>
-                <a href="logout.php" style="margin-left: auto">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div style="padding: 30px;">
             <h2>💾 Sistem Yedekleme</h2>
@@ -83,5 +70,4 @@ rsort($yedekler);
             </div>
         </div>
     </div>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

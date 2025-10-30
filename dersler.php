@@ -31,26 +31,11 @@ $dersler = $pdo->query("
     JOIN ders_kategorileri dk ON d.kategori_id = dk.id
     ORDER BY dk.sira, d.sira
 ")->fetchAll();
+
+$aktif_sayfa = 'dersler';
+$sayfa_basligi = 'Dersler - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Dersler - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenciler.php">Öğrenciler</a>
-                <a href="ders-kategorileri.php">Ders Kategorileri</a>
-                <a href="dersler.php" class="active">Dersler</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
 
         <div style="padding: 30px;">
             <h2>📖 Dersler</h2>
@@ -105,5 +90,4 @@ $dersler = $pdo->query("
             </table>
         </div>
     </div>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>

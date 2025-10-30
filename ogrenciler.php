@@ -39,150 +39,133 @@ $istatistikler = $pdo->query("
         SUM(CASE WHEN aktif = 0 THEN 1 ELSE 0 END) as pasif_sayi
     FROM ogrenciler
 ")->fetch();
+
+$aktif_sayfa = 'ogrenciler';
+$sayfa_basligi = 'Öğrenci Listesi - Cami Namaz Takip';
+require_once 'config/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Öğrenci Listesi - Cami Namaz Takip</title>
-    <link rel="stylesheet" href="assets/style.css">
-    <style>
-        .filter-bar {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        <style>
+            .filter-bar {
+                background: #f8f9fa;
+                padding: 20px;
+                border-radius: 10px;
+                margin-bottom: 20px;
+                display: flex;
+                gap: 15px;
+                align-items: center;
+                flex-wrap: wrap;
+            }
 
-        .filter-btn {
-            padding: 10px 20px;
-            border: 2px solid #e1e8ed;
-            border-radius: 20px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-decoration: none;
-            color: #333;
-            font-weight: 500;
-        }
+            .filter-btn {
+                padding: 10px 20px;
+                border: 2px solid #e1e8ed;
+                border-radius: 20px;
+                background: white;
+                cursor: pointer;
+                transition: all 0.3s;
+                text-decoration: none;
+                color: #333;
+                font-weight: 500;
+            }
 
-        .filter-btn.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
+            .filter-btn.active {
+                background: #667eea;
+                color: white;
+                border-color: #667eea;
+            }
 
-        .filter-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
+            .filter-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
 
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-        }
+            .search-box {
+                flex: 1;
+                min-width: 250px;
+            }
 
-        .search-box input {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #e1e8ed;
-            border-radius: 20px;
-            font-size: 14px;
-        }
+            .search-box input {
+                width: 100%;
+                padding: 10px 15px;
+                border: 2px solid #e1e8ed;
+                border-radius: 20px;
+                font-size: 14px;
+            }
 
-        .stats-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
+            .stats-cards {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 15px;
+                margin-bottom: 20px;
+            }
 
-        .stat-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 10px;
-            text-align: center;
-        }
+            .stat-card {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                text-align: center;
+            }
 
-        .stat-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 2em;
-        }
+            .stat-card h3 {
+                margin: 0 0 10px 0;
+                font-size: 2em;
+            }
 
-        .stat-card p {
-            margin: 0;
-            opacity: 0.9;
-        }
+            .stat-card p {
+                margin: 0;
+                opacity: 0.9;
+            }
 
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-        }
+            .action-buttons {
+                display: flex;
+                gap: 5px;
+            }
 
-        .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s;
-        }
+            .btn-sm {
+                padding: 5px 10px;
+                font-size: 12px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                text-decoration: none;
+                display: inline-block;
+                transition: all 0.3s;
+            }
 
-        .btn-edit {
-            background: #ffc107;
-            color: #000;
-        }
+            .btn-edit {
+                background: #ffc107;
+                color: #000;
+            }
 
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-        }
+            .btn-delete {
+                background: #dc3545;
+                color: white;
+            }
 
-        .btn-sm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        }
+            .btn-sm:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            }
 
-        .status-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
+            .status-badge {
+                display: inline-block;
+                padding: 3px 10px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+            }
 
-        .status-aktif {
-            background: #d4edda;
-            color: #155724;
-        }
+            .status-aktif {
+                background: #d4edda;
+                color: #155724;
+            }
 
-        .status-pasif {
-            background: #f8d7da;
-            color: #721c24;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
-            <nav>
-                <a href="index.php">Ana Sayfa</a>
-                <a href="ogrenciler.php" class="active">Öğrenciler</a>
-                <a href="ogrenci-ekle.php">Öğrenci Ekle</a>
-                <a href="namaz-ekle-yeni.php">Namaz Ekle</a>
-                <a href="genel-rapor.php">Genel Rapor</a>
-                <a href="logout.php" style="margin-left: auto; background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>
-            </nav>
-        </header>
+            .status-pasif {
+                background: #f8d7da;
+                color: #721c24;
+            }
+        </style>
 
         <div style="padding: 30px;">
             <h2>👥 Öğrenci Listesi</h2>
@@ -330,5 +313,4 @@ $istatistikler = $pdo->query("
             }
         }
     </script>
-</body>
-</html>
+<?php require_once 'config/footer.php'; ?>
