@@ -187,8 +187,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
             Kullanıcı adı ve şifrenizi öğretmeninizden alabilirsiniz.
         </div>
 
-        <div class="back-link">
-            <a href="../index.php">← Yönetici Girişi</a>
+        <div style="text-align: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(255,255,255,0.2);">
+            <p style="color: rgba(255,255,255,0.8); margin-bottom: 12px; font-size: 13px;">Yönetici misiniz?</p>
+            <a href="../login.php" style="display: inline-block; background: rgba(255,255,255,0.15); backdrop-filter: blur(10px); color: white; padding: 10px 25px; border-radius: 10px; text-decoration: none; font-weight: 600; transition: all 0.3s; border: 2px solid rgba(255,255,255,0.3);" onmouseover="this.style.background='rgba(255,255,255,0.25)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='translateY(0)';">
+                🔑 Yönetici Girişi
+            </a>
         </div>
     </div>
 </body>

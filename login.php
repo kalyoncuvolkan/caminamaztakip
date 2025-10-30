@@ -215,9 +215,16 @@ if(isset($_SESSION['user_id'])) {
                 🚪 Giriş Yap
             </button>
         </form>
-        
+
+        <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e1e8ed;">
+            <p style="color: #666; margin-bottom: 15px; font-size: 14px;">Öğrenci misiniz?</p>
+            <a href="ogrenci-panel/login.php" style="display: inline-block; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 12px 30px; border-radius: 10px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(40,167,69,0.3);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(40,167,69,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(40,167,69,0.3)';">
+                🎓 Öğrenci Girişi
+            </a>
+        </div>
+
         <div class="security-info">
-            <strong>🔐 Güvenlik:</strong> Bu sistem sadece yetkili kullanıcılar için tasarlanmıştır. 
+            <strong>🔐 Güvenlik:</strong> Bu sistem sadece yetkili kullanıcılar için tasarlanmıştır.
             Tüm giriş denemeleri kaydedilir.
         </div>
     </div>
