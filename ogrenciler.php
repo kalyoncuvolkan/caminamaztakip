@@ -168,7 +168,12 @@ require_once 'config/header.php';
         </style>
 
         <div style="padding: 30px;">
-            <h2>👥 Öğrenci Listesi</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">👥 Öğrenci Listesi</h2>
+                <a href="ogrenci-ekle.php" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(102,126,234,0.3);">
+                    ➕ Yeni Öğrenci Ekle
+                </a>
+            </div>
 
             <div class="stats-cards">
                 <div class="stat-card">
