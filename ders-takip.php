@@ -11,8 +11,19 @@ if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ders_tamamla'])) {
     $ders_id = $_POST['ders_id'];
     $puan = $_POST['puan'];
 
-    $stmt = $pdo->prepare("UPDATE ogrenci_dersler SET durum = 'Tamamlandi', tamamlanma_tarihi = CURDATE(), puan_verildi = 1 WHERE ogrenci_id = ? AND ders_id = ?");
-    $stmt->execute([$ogrenci_id, $ders_id]);
+    // Önce kayıt var mı kontrol et, yoksa oluştur
+    $check = $pdo->prepare("SELECT id FROM ogrenci_dersler WHERE ogrenci_id = ? AND ders_id = ?");
+    $check->execute([$ogrenci_id, $ders_id]);
+
+    if($check->fetch()) {
+        // Kayıt varsa güncelle
+        $stmt = $pdo->prepare("UPDATE ogrenci_dersler SET durum = 'Tamamlandi', tamamlanma_tarihi = CURDATE(), puan_verildi = 1 WHERE ogrenci_id = ? AND ders_id = ?");
+        $stmt->execute([$ogrenci_id, $ders_id]);
+    } else {
+        // Kayıt yoksa oluştur
+        $stmt = $pdo->prepare("INSERT INTO ogrenci_dersler (ogrenci_id, ders_id, durum, tamamlanma_tarihi, puan_verildi) VALUES (?, ?, 'Tamamlandi', CURDATE(), 1)");
+        $stmt->execute([$ogrenci_id, $ders_id]);
+    }
 
     // İlave puan ekle
     $pdo->prepare("INSERT INTO ilave_puanlar (ogrenci_id, puan, aciklama, veren_kullanici, tarih) VALUES (?, ?, ?, ?, CURDATE())")->execute([$ogrenci_id, $puan, 'Ders tamamlama', getLoggedInUser()]);
@@ -26,11 +37,11 @@ $ders->execute([$ders_id]);
 $ders_bilgi = $ders->fetch();
 
 $ogrenciler = $pdo->prepare("
-    SELECT o.*, od.durum, od.tamamlanma_tarihi
+    SELECT o.*, IFNULL(od.durum, 'Beklemede') as durum, od.tamamlanma_tarihi
     FROM ogrenciler o
     LEFT JOIN ogrenci_dersler od ON o.id = od.ogrenci_id AND od.ders_id = ?
     WHERE o.aktif = 1
-    ORDER BY od.durum, o.ad_soyad
+    ORDER BY IFNULL(od.durum, 'Beklemede'), o.ad_soyad
 ");
 $ogrenciler->execute([$ders_id]);
 $ogr_list = $ogrenciler->fetchAll();
