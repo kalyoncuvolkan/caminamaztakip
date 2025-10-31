@@ -192,9 +192,13 @@ require_once 'config/header.php';
         $dersler = $kategori_dersler[$kat['id']];
         if(empty($dersler)) continue;
 
-        // Verilen ve verilmeyen dersleri ayır
-        $verilen = array_filter($dersler, function($d) { return $d['durum'] == 'Tamamlandi'; });
-        $verilmeyen = array_filter($dersler, function($d) { return $d['durum'] != 'Tamamlandi'; });
+        // Verilen ve verilmeyen dersleri ayır (sadece öğrenciye atanmış olanlar)
+        $verilen = array_filter($dersler, function($d) {
+            return $d['ogrenci_ders_id'] !== null && $d['durum'] == 'Tamamlandi';
+        });
+        $verilmeyen = array_filter($dersler, function($d) {
+            return $d['ogrenci_ders_id'] !== null && $d['durum'] != 'Tamamlandi';
+        });
         ?>
 
         <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
