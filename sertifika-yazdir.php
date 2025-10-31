@@ -131,37 +131,19 @@ if (!$sertifika) {
             margin-bottom: 15mm;
         }
 
-        .mosque-icon {
-            font-size: 72px;
-            color: #c19a6b;
-            margin-bottom: 10px;
-        }
-
         .certificate-title {
-            font-size: 28px;
-            color: #2c3e50;
+            font-size: 36px;
+            color: #c19a6b;
             text-transform: uppercase;
-            letter-spacing: 4px;
-            margin-bottom: 5px;
+            letter-spacing: 6px;
+            margin-bottom: 15px;
             font-weight: bold;
-        }
-
-        .certificate-subtitle {
-            font-size: 16px;
-            color: #7f8c8d;
-            font-style: italic;
         }
 
         .certificate-body {
             margin: 20mm 0;
         }
 
-        .presented-to {
-            font-size: 14px;
-            color: #7f8c8d;
-            margin-bottom: 8px;
-            font-style: italic;
-        }
 
         .recipient-name {
             font-size: 42px;
@@ -232,12 +214,6 @@ if (!$sertifika) {
             font-style: italic;
         }
 
-        .certificate-date {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #7f8c8d;
-        }
 
         .print-button {
             position: fixed;
@@ -298,8 +274,6 @@ if (!$sertifika) {
     <a href="sertifikalar.php" class="close-button no-print">← Geri Dön</a>
 
     <div class="certificate-container">
-        <div class="watermark">🕌</div>
-
         <div class="certificate-border"></div>
         <div class="certificate-inner-border"></div>
 
@@ -310,14 +284,10 @@ if (!$sertifika) {
 
         <div class="certificate-content">
             <div class="certificate-header">
-                <div class="mosque-icon">🕌</div>
-                <div class="certificate-title">Takdir Belgesi</div>
-                <div class="certificate-subtitle">Certificate of Achievement</div>
+                <div class="certificate-title">ATAKÖY CAMİİ</div>
             </div>
 
             <div class="certificate-body">
-                <div class="presented-to">Bu belge,</div>
-
                 <div class="recipient-name"><?php echo htmlspecialchars($sertifika['ad_soyad']); ?></div>
 
                 <div class="achievement">
@@ -340,16 +310,9 @@ if (!$sertifika) {
             <div class="certificate-footer">
                 <div class="signature-block">
                     <div class="signature-line"></div>
-                    <div class="signature-title">Öğretmen</div>
+                    <div class="signature-title" style="font-weight: bold; font-size: 16px; color: #2c3e50; margin-top: 15px;">MEHMET TÜZÜN</div>
+                    <div class="signature-title" style="font-size: 13px; margin-top: 5px;">ATAKÖY CAMİİ İMAM-HATİBİ</div>
                 </div>
-                <div class="signature-block">
-                    <div class="signature-line"></div>
-                    <div class="signature-title">Cami İmamı</div>
-                </div>
-            </div>
-
-            <div class="certificate-date">
-                📅 Tarih: <?php echo date('d.m.Y', strtotime($sertifika['tarih'])); ?>
             </div>
         </div>
     </div>
