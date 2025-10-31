@@ -183,6 +183,25 @@ CREATE TABLE IF NOT EXISTS `puan_silme_gecmisi` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
 -- ==========================================
+-- İlave Puan Silme Geçmişi Tablosu
+-- ==========================================
+CREATE TABLE IF NOT EXISTS `ilave_puan_silme_gecmisi` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `ogrenci_id` int NOT NULL,
+  `puan` int NOT NULL,
+  `aciklama` text COLLATE utf8mb4_turkish_ci,
+  `veren_kullanici` varchar(50) COLLATE utf8mb4_turkish_ci DEFAULT NULL,
+  `tarih` date NOT NULL,
+  `silme_nedeni` text COLLATE utf8mb4_turkish_ci,
+  `silen_kullanici` varchar(50) COLLATE utf8mb4_turkish_ci DEFAULT NULL,
+  `silme_zamani` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ogrenci_id` (`ogrenci_id`),
+  KEY `idx_tarih` (`tarih`),
+  CONSTRAINT `ilave_puan_silme_gecmisi_ibfk_1` FOREIGN KEY (`ogrenci_id`) REFERENCES `ogrenciler` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
+
+-- ==========================================
 -- Öğrenci Mesajları Tablosu
 -- ==========================================
 CREATE TABLE IF NOT EXISTS `ogrenci_mesajlari` (

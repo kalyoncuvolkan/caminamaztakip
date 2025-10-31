@@ -58,10 +58,15 @@ $ilaveler = $pdo->prepare("SELECT * FROM ilave_puanlar WHERE ogrenci_id = ? ORDE
 $ilaveler->execute([$ogrenci_id]);
 $ilave_puanlar = $ilaveler->fetchAll();
 
-// Silinen puanlar
+// Silinen namaz kayıtları
 $silinenler = $pdo->prepare("SELECT * FROM puan_silme_gecmisi WHERE ogrenci_id = ? ORDER BY silme_zamani DESC");
 $silinenler->execute([$ogrenci_id]);
 $silinen_kayitlar = $silinenler->fetchAll();
+
+// Silinen ilave puanlar
+$silinen_ilaveler = $pdo->prepare("SELECT * FROM ilave_puan_silme_gecmisi WHERE ogrenci_id = ? ORDER BY silme_zamani DESC");
+$silinen_ilaveler->execute([$ogrenci_id]);
+$silinen_ilave_puanlar = $silinen_ilaveler->fetchAll();
 
 // İlave puan ekleme
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ilave_puan_ekle'])) {
@@ -128,22 +133,25 @@ require_once 'config/header.php';
             <h3 style="margin-top: 30px;">⭐ İlave Puanlar</h3>
             <table>
                 <thead>
-                    <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th></tr>
+                    <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th><th>İşlem</th></tr>
                 </thead>
                 <tbody>
                     <?php foreach($ilave_puanlar as $ip): ?>
-                    <tr><td><?php echo date('d.m.Y', strtotime($ip['tarih'])); ?></td>
-                    <td><strong>+<?php echo $ip['puan']; ?></strong></td>
-                    <td><?php echo htmlspecialchars($ip['aciklama']); ?></td>
-                    <td><?php echo $ip['veren_kullanici']; ?></td></tr>
+                    <tr id="ilave-puan-<?php echo $ip['id']; ?>">
+                        <td><?php echo date('d.m.Y', strtotime($ip['tarih'])); ?></td>
+                        <td><strong>+<?php echo $ip['puan']; ?></strong></td>
+                        <td><?php echo htmlspecialchars($ip['aciklama']); ?></td>
+                        <td><?php echo $ip['veren_kullanici']; ?></td>
+                        <td><button onclick="ilavePuanSil(<?php echo $ip['id']; ?>)" class="btn-sm btn-delete">🗑️ Sil</button></td>
+                    </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
             <?php endif; ?>
 
-            <!-- Silinen Puanlar -->
+            <!-- Silinen Namaz Kayıtları -->
             <?php if(count($silinen_kayitlar) > 0): ?>
-            <h3 style="margin-top: 30px;">❌ Silinen Puanlar</h3>
+            <h3 style="margin-top: 30px;">❌ Silinen Namaz Kayıtları</h3>
             <table>
                 <thead>
                     <tr><th>Tarih</th><th>Vakit</th><th>Kiminle</th><th>Silme Nedeni</th><th>Silen</th><th>Silme Zamanı</th></tr>
@@ -160,12 +168,35 @@ require_once 'config/header.php';
                 </tbody>
             </table>
             <?php endif; ?>
+
+            <!-- Silinen İlave Puanlar -->
+            <?php if(count($silinen_ilave_puanlar) > 0): ?>
+            <h3 style="margin-top: 30px;">❌ Silinen İlave Puanlar</h3>
+            <table>
+                <thead>
+                    <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th><th>Silme Nedeni</th><th>Silen</th><th>Silme Zamanı</th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach($silinen_ilave_puanlar as $sip): ?>
+                    <tr style="background: #fff3cd;">
+                        <td><?php echo date('d.m.Y', strtotime($sip['tarih'])); ?></td>
+                        <td><strong>+<?php echo $sip['puan']; ?></strong></td>
+                        <td><?php echo htmlspecialchars($sip['aciklama']); ?></td>
+                        <td><?php echo $sip['veren_kullanici']; ?></td>
+                        <td><?php echo htmlspecialchars($sip['silme_nedeni']); ?></td>
+                        <td><?php echo $sip['silen_kullanici']; ?></td>
+                        <td><?php echo date('d.m.Y H:i', strtotime($sip['silme_zamani'])); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
         </div>
     </div>
 
     <script>
         function puanSil(kayitId) {
-            const nedeni = prompt('❓ Silme nedeni (opsiyonel):');
+            const nedeni = prompt('❓ Namaz kaydı silme nedeni (opsiyonel):');
             if(nedeni !== null) {
                 fetch('api/puan-sil.php', {
                     method: 'POST',
@@ -175,7 +206,27 @@ require_once 'config/header.php';
                 .then(r => r.json())
                 .then(d => {
                     if(d.success) {
-                        alert('✅ Puan silindi ve geçmişe kaydedildi');
+                        alert('✅ Namaz kaydı silindi ve geçmişe kaydedildi');
+                        location.reload();
+                    } else {
+                        alert('❌ Hata: ' + d.message);
+                    }
+                });
+            }
+        }
+
+        function ilavePuanSil(ilavePuanId) {
+            const nedeni = prompt('❓ İlave puan silme nedeni (opsiyonel):');
+            if(nedeni !== null) {
+                fetch('api/ilave-puan-sil.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: 'ilave_puan_id=' + ilavePuanId + '&nedeni=' + encodeURIComponent(nedeni)
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.success) {
+                        alert('✅ İlave puan silindi ve geçmişe kaydedildi');
                         location.reload();
                     } else {
                         alert('❌ Hata: ' + d.message);
