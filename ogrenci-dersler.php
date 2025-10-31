@@ -95,6 +95,16 @@ $eklenebilir_ders_sayisi = $pdo->prepare("
 $eklenebilir_ders_sayisi->execute([$ogrenci_id]);
 $eklenebilir_toplam = $eklenebilir_ders_sayisi->fetchColumn();
 
+// Silinen dersleri çek
+$silinen_dersler_query = $pdo->prepare("
+    SELECT * FROM ogrenci_ders_silme_gecmisi
+    WHERE ogrenci_id = ?
+    ORDER BY silme_zamani DESC
+    LIMIT 20
+");
+$silinen_dersler_query->execute([$ogrenci_id]);
+$silinen_dersler = $silinen_dersler_query->fetchAll();
+
 $aktif_sayfa = 'ogrenciler';
 $sayfa_basligi = 'Dersler - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Takip';
 require_once 'config/header.php';
@@ -217,9 +227,14 @@ require_once 'config/header.php';
                         </div>
                         <?php endif; ?>
                     </div>
-                    <button onclick="dersAktifEt(<?php echo $ders['ogrenci_ders_id']; ?>)" class="btn-sm" style="background: #ffc107; color: #000; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
-                        🔄 Tekrar Aktif Et
-                    </button>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="dersAktifEt(<?php echo $ders['ogrenci_ders_id']; ?>)" class="btn-sm" style="background: #ffc107; color: #000; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                            🔄 Tekrar Aktif Et
+                        </button>
+                        <button onclick="dersSil(<?php echo $ders['ogrenci_ders_id']; ?>, '<?php echo htmlspecialchars($ders['ders_adi']); ?>')" class="btn-sm" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                            🗑️ Sil
+                        </button>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -242,9 +257,14 @@ require_once 'config/header.php';
                         </div>
                         <?php endif; ?>
                     </div>
-                    <button onclick="dersVer(<?php echo $ders['ogrenci_ders_id']; ?>)" class="btn-sm btn-success" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
-                        ✅ Verdi
-                    </button>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="dersVer(<?php echo $ders['ogrenci_ders_id']; ?>)" class="btn-sm btn-success" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                            ✅ Verdi
+                        </button>
+                        <button onclick="dersSil(<?php echo $ders['ogrenci_ders_id']; ?>, '<?php echo htmlspecialchars($ders['ders_adi']); ?>')" class="btn-sm" style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">
+                            🗑️ Sil
+                        </button>
+                    </div>
                 </div>
                 <?php endforeach; ?>
             </div>
@@ -283,6 +303,48 @@ require_once 'config/header.php';
                 </tr>
             </tfoot>
         </table>
+    </div>
+    <?php endif; ?>
+
+    <!-- Silinen Dersler -->
+    <?php if(!empty($silinen_dersler)): ?>
+    <div style="background: #fff3cd; padding: 25px; border-radius: 12px; margin-top: 30px; border-left: 5px solid #ffc107;">
+        <h3 style="margin: 0 0 20px 0; color: #856404;">🗑️ Silinen Dersler Geçmişi (Son 20)</h3>
+        <div style="max-height: 400px; overflow-y: auto;">
+            <?php foreach($silinen_dersler as $silinen): ?>
+            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #ffc107;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <strong style="color: #856404; font-size: 16px;"><?php echo htmlspecialchars($silinen['ders_adi']); ?></strong>
+                        <span style="margin-left: 10px; padding: 3px 8px; background: #6c757d; color: white; border-radius: 5px; font-size: 12px;">
+                            <?php echo htmlspecialchars($silinen['kategori_adi']); ?>
+                        </span>
+                        <span style="margin-left: 5px; padding: 3px 8px; background: #ffc107; color: #000; border-radius: 5px; font-size: 12px;">
+                            <?php echo $silinen['puan']; ?> puan
+                        </span>
+                    </div>
+                    <button onclick="dersYenidenAta(<?php echo $silinen['ders_id']; ?>, '<?php echo htmlspecialchars($silinen['ders_adi']); ?>')"
+                            class="btn-sm" style="background: #28a745; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; white-space: nowrap;">
+                        🔄 Yeniden Ata
+                    </button>
+                </div>
+                <div style="font-size: 13px; color: #666; margin-top: 8px;">
+                    <div>📅 Silinme: <?php echo date('d.m.Y H:i', strtotime($silinen['silme_zamani'])); ?></div>
+                    <?php if($silinen['verme_tarihi']): ?>
+                    <div>✅ Verilme: <?php echo date('d.m.Y H:i', strtotime($silinen['verme_tarihi'])); ?> (<?php echo $silinen['durum']; ?>)</div>
+                    <?php else: ?>
+                    <div>⏸️ Durum: <?php echo $silinen['durum']; ?> (verilmeden silindi)</div>
+                    <?php endif; ?>
+                    <div>👤 Silen: <?php echo htmlspecialchars($silinen['silen_kullanici']); ?></div>
+                    <?php if($silinen['silme_nedeni']): ?>
+                    <div style="background: #f8f9fa; padding: 8px; border-radius: 5px; margin-top: 5px;">
+                        <strong>Silme Nedeni:</strong> <?php echo htmlspecialchars($silinen['silme_nedeni']); ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
     </div>
     <?php endif; ?>
 
@@ -354,6 +416,55 @@ function dersEkle() {
     const dersId = document.getElementById('ders_id').value;
     if(!dersId) {
         alert('Lütfen bir ders seçin!');
+        return;
+    }
+
+    fetch('api/ogrenci-ders-ekle.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'ogrenci_id=<?php echo $ogrenci_id; ?>&ders_id=' + dersId
+    })
+    .then(r => r.json())
+    .then(d => {
+        if(d.success) {
+            alert('✅ ' + d.message);
+            location.reload();
+        } else {
+            alert('❌ Hata: ' + d.message);
+        }
+    });
+}
+
+function dersSil(ogrenciDersId, dersAdi) {
+    const nedeni = prompt('❓ "' + dersAdi + '" dersini öğrenciden silmek istediğinize emin misiniz?\n\nLütfen silme nedenini belirtin:', '');
+
+    if(nedeni === null) {
+        return; // İptal
+    }
+
+    if(nedeni.trim() === '') {
+        alert('❌ Silme nedeni boş bırakılamaz!');
+        return;
+    }
+
+    fetch('api/ogrenci-ders-sil.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'ogrenci_ders_id=' + ogrenciDersId + '&nedeni=' + encodeURIComponent(nedeni)
+    })
+    .then(r => r.json())
+    .then(d => {
+        if(d.success) {
+            alert('✅ ' + d.message);
+            location.reload();
+        } else {
+            alert('❌ Hata: ' + d.message);
+        }
+    });
+}
+
+function dersYenidenAta(dersId, dersAdi) {
+    if(!confirm('🔄 "' + dersAdi + '" dersi öğrenciye yeniden atanacak.\n\nOnaylıyor musunuz?')) {
         return;
     }
 
