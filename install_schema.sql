@@ -114,6 +114,10 @@ CREATE TABLE IF NOT EXISTS `ogrenci_dersler` (
   `ders_id` int NOT NULL,
   `durum` enum('Beklemede','Tamamlandi') COLLATE utf8mb4_turkish_ci DEFAULT 'Beklemede',
   `tamamlanma_tarihi` date DEFAULT NULL,
+  `verme_tarihi` datetime DEFAULT NULL COMMENT 'Dersi verdiği tarih ve saat',
+  `aktif_edilme_sayisi` int DEFAULT '0' COMMENT 'Kaç kez tekrar aktif edildi',
+  `onceki_puan` int DEFAULT NULL COMMENT 'Aktif etmeden önceki puan',
+  `son_aktif_edilme` datetime DEFAULT NULL COMMENT 'Son aktif edilme zamanı',
   `puan_verildi` tinyint(1) DEFAULT '0',
   `notlar` text COLLATE utf8mb4_turkish_ci,
   `atama_tarihi` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
@@ -153,6 +157,7 @@ CREATE TABLE IF NOT EXISTS `ilave_puanlar` (
   `id` int NOT NULL AUTO_INCREMENT,
   `ogrenci_id` int NOT NULL,
   `puan` int NOT NULL,
+  `kategori` enum('Namaz','Ders') COLLATE utf8mb4_turkish_ci DEFAULT 'Namaz' COMMENT 'Puan kategorisi',
   `aciklama` text COLLATE utf8mb4_turkish_ci,
   `veren_kullanici` varchar(50) COLLATE utf8mb4_turkish_ci DEFAULT NULL,
   `tarih` date NOT NULL,
@@ -160,6 +165,7 @@ CREATE TABLE IF NOT EXISTS `ilave_puanlar` (
   PRIMARY KEY (`id`),
   KEY `idx_ogrenci` (`ogrenci_id`),
   KEY `idx_tarih` (`tarih`),
+  KEY `idx_kategori` (`kategori`),
   CONSTRAINT `ilave_puanlar_ibfk_1` FOREIGN KEY (`ogrenci_id`) REFERENCES `ogrenciler` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci;
 
@@ -189,6 +195,7 @@ CREATE TABLE IF NOT EXISTS `ilave_puan_silme_gecmisi` (
   `id` int NOT NULL AUTO_INCREMENT,
   `ogrenci_id` int NOT NULL,
   `puan` int NOT NULL,
+  `kategori` enum('Namaz','Ders') COLLATE utf8mb4_turkish_ci DEFAULT 'Namaz' COMMENT 'Puan kategorisi',
   `aciklama` text COLLATE utf8mb4_turkish_ci,
   `veren_kullanici` varchar(50) COLLATE utf8mb4_turkish_ci DEFAULT NULL,
   `tarih` date NOT NULL,
