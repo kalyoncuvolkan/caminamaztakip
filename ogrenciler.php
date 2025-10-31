@@ -241,6 +241,7 @@ require_once 'config/header.php';
                                 <a href="ogrenci-duzenle.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm btn-edit">✏️ Düzenle</a>
                                 <a href="ogrenci-dersler.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm" style="background: #28a745; color: white;">📚 Dersler</a>
                                 <a href="ozel-rapor.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm" style="background: #007bff; color: white;">📊 Rapor</a>
+                                <a href="donem-rapor.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm" style="background: #6f42c1; color: white;">📋 Dönem Raporu</a>
                                 <button onclick="sifreSifirla(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>')" class="btn-sm" style="background: #ffc107; color: #000;">🔒 Şifre Sıfırla</button>
                                 <button onclick="ogrenciSil(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>')" class="btn-sm btn-delete">🗑️ Sil</button>
                             </div>

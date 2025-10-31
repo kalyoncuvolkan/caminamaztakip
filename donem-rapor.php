@@ -190,7 +190,7 @@ if($format == 'excel') {
 }
 
 // HTML view
-$aktif_sayfa = 'ogrenciler';
+$aktif_sayfa = 'donem_rapor';
 $sayfa_basligi = 'Dönem Raporu - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Takip';
 require_once 'config/header.php';
 ?>
