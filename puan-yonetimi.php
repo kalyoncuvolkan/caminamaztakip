@@ -53,29 +53,40 @@ $namazlar = $pdo->prepare("
 $namazlar->execute([$ogrenci_id]);
 $kayitlar = $namazlar->fetchAll();
 
-// İlave puanlar
-$ilaveler = $pdo->prepare("SELECT * FROM ilave_puanlar WHERE ogrenci_id = ? ORDER BY tarih DESC");
-$ilaveler->execute([$ogrenci_id]);
-$ilave_puanlar = $ilaveler->fetchAll();
+// İlave puanlar - Namaz
+$ilaveler_namaz = $pdo->prepare("SELECT * FROM ilave_puanlar WHERE ogrenci_id = ? AND kategori = 'Namaz' ORDER BY tarih DESC");
+$ilaveler_namaz->execute([$ogrenci_id]);
+$ilave_puanlar_namaz = $ilaveler_namaz->fetchAll();
+
+// İlave puanlar - Ders
+$ilaveler_ders = $pdo->prepare("SELECT * FROM ilave_puanlar WHERE ogrenci_id = ? AND kategori = 'Ders' ORDER BY tarih DESC");
+$ilaveler_ders->execute([$ogrenci_id]);
+$ilave_puanlar_ders = $ilaveler_ders->fetchAll();
 
 // Silinen namaz kayıtları
 $silinenler = $pdo->prepare("SELECT * FROM puan_silme_gecmisi WHERE ogrenci_id = ? ORDER BY silme_zamani DESC");
 $silinenler->execute([$ogrenci_id]);
 $silinen_kayitlar = $silinenler->fetchAll();
 
-// Silinen ilave puanlar
-$silinen_ilaveler = $pdo->prepare("SELECT * FROM ilave_puan_silme_gecmisi WHERE ogrenci_id = ? ORDER BY silme_zamani DESC");
-$silinen_ilaveler->execute([$ogrenci_id]);
-$silinen_ilave_puanlar = $silinen_ilaveler->fetchAll();
+// Silinen ilave puanlar - Namaz
+$silinen_ilaveler_namaz = $pdo->prepare("SELECT * FROM ilave_puan_silme_gecmisi WHERE ogrenci_id = ? AND kategori = 'Namaz' ORDER BY silme_zamani DESC");
+$silinen_ilaveler_namaz->execute([$ogrenci_id]);
+$silinen_ilave_puanlar_namaz = $silinen_ilaveler_namaz->fetchAll();
+
+// Silinen ilave puanlar - Ders
+$silinen_ilaveler_ders = $pdo->prepare("SELECT * FROM ilave_puan_silme_gecmisi WHERE ogrenci_id = ? AND kategori = 'Ders' ORDER BY silme_zamani DESC");
+$silinen_ilaveler_ders->execute([$ogrenci_id]);
+$silinen_ilave_puanlar_ders = $silinen_ilaveler_ders->fetchAll();
 
 // İlave puan ekleme
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ilave_puan_ekle'])) {
     $puan = $_POST['puan'];
+    $kategori = $_POST['kategori'];
     $aciklama = $_POST['aciklama'];
     $tarih = $_POST['tarih'];
 
-    $stmt = $pdo->prepare("INSERT INTO ilave_puanlar (ogrenci_id, puan, aciklama, veren_kullanici, tarih) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([$ogrenci_id, $puan, $aciklama, getLoggedInUser(), $tarih]);
+    $stmt = $pdo->prepare("INSERT INTO ilave_puanlar (ogrenci_id, puan, kategori, aciklama, veren_kullanici, tarih) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->execute([$ogrenci_id, $puan, $kategori, $aciklama, getLoggedInUser(), $tarih]);
     $mesaj = "İlave puan başarıyla eklendi!";
     header("Location: puan-yonetimi.php?id=$ogrenci_id");
     exit;
@@ -98,6 +109,14 @@ require_once 'config/header.php';
             <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 20px 0;">
                 <h3>➕ İlave Puan Ekle</h3>
                 <form method="POST" style="display: grid; gap: 15px; max-width: 600px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Kategori:</label>
+                        <select name="kategori" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;">
+                            <option value="">Kategori Seçin</option>
+                            <option value="Namaz" selected>🕌 Namaz</option>
+                            <option value="Ders">📚 Ders</option>
+                        </select>
+                    </div>
                     <input type="number" name="puan" placeholder="Puan miktarı" required min="1" style="padding: 10px; border-radius: 5px; border: 2px solid #ddd;">
                     <input type="date" name="tarih" value="<?php echo date('Y-m-d'); ?>" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd;">
                     <textarea name="aciklama" placeholder="Açıklama (opsiyonel)" rows="3" style="padding: 10px; border-radius: 5px; border: 2px solid #ddd;"></textarea>
@@ -128,23 +147,31 @@ require_once 'config/header.php';
                 </tbody>
             </table>
 
-            <!-- İlave Puanlar -->
-            <?php if(count($ilave_puanlar) > 0): ?>
-            <h3 style="margin-top: 30px;">⭐ İlave Puanlar</h3>
+            <!-- İlave Namaz Puanları -->
+            <?php if(count($ilave_puanlar_namaz) > 0): ?>
+            <h3 style="margin-top: 30px;">⭐ İlave Namaz Puanları</h3>
             <table>
                 <thead>
                     <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th><th>İşlem</th></tr>
                 </thead>
                 <tbody>
-                    <?php foreach($ilave_puanlar as $ip): ?>
+                    <?php
+                    $toplam_namaz_ilave = 0;
+                    foreach($ilave_puanlar_namaz as $ip):
+                        $toplam_namaz_ilave += $ip['puan'];
+                    ?>
                     <tr id="ilave-puan-<?php echo $ip['id']; ?>">
                         <td><?php echo date('d.m.Y', strtotime($ip['tarih'])); ?></td>
-                        <td><strong>+<?php echo $ip['puan']; ?></strong></td>
+                        <td><strong style="color: #28a745;">+<?php echo $ip['puan']; ?></strong></td>
                         <td><?php echo htmlspecialchars($ip['aciklama']); ?></td>
                         <td><?php echo $ip['veren_kullanici']; ?></td>
                         <td><button onclick="ilavePuanSil(<?php echo $ip['id']; ?>)" class="btn-sm btn-delete">🗑️ Sil</button></td>
                     </tr>
                     <?php endforeach; ?>
+                    <tr style="background: #d4edda; font-weight: bold;">
+                        <td colspan="4" style="text-align: right; padding: 10px;">Toplam İlave Namaz Puanı:</td>
+                        <td style="color: #28a745; font-size: 18px;">+<?php echo $toplam_namaz_ilave; ?></td>
+                    </tr>
                 </tbody>
             </table>
             <?php endif; ?>
@@ -169,15 +196,67 @@ require_once 'config/header.php';
             </table>
             <?php endif; ?>
 
-            <!-- Silinen İlave Puanlar -->
-            <?php if(count($silinen_ilave_puanlar) > 0): ?>
-            <h3 style="margin-top: 30px;">❌ Silinen İlave Puanlar</h3>
+            <!-- İlave Ders Puanları -->
+            <?php if(count($ilave_puanlar_ders) > 0): ?>
+            <h3 style="margin-top: 30px;">📚 İlave Ders Puanları</h3>
+            <table>
+                <thead>
+                    <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th><th>İşlem</th></tr>
+                </thead>
+                <tbody>
+                    <?php
+                    $toplam_ders_ilave = 0;
+                    foreach($ilave_puanlar_ders as $ip):
+                        $toplam_ders_ilave += $ip['puan'];
+                    ?>
+                    <tr id="ilave-puan-<?php echo $ip['id']; ?>">
+                        <td><?php echo date('d.m.Y', strtotime($ip['tarih'])); ?></td>
+                        <td><strong style="color: #007bff;">+<?php echo $ip['puan']; ?></strong></td>
+                        <td><?php echo htmlspecialchars($ip['aciklama']); ?></td>
+                        <td><?php echo $ip['veren_kullanici']; ?></td>
+                        <td><button onclick="ilavePuanSil(<?php echo $ip['id']; ?>)" class="btn-sm btn-delete">🗑️ Sil</button></td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <tr style="background: #cce5ff; font-weight: bold;">
+                        <td colspan="4" style="text-align: right; padding: 10px;">Toplam İlave Ders Puanı:</td>
+                        <td style="color: #007bff; font-size: 18px;">+<?php echo $toplam_ders_ilave; ?></td>
+                    </tr>
+                </tbody>
+            </table>
+            <?php endif; ?>
+
+            <!-- Silinen İlave Namaz Puanları -->
+            <?php if(count($silinen_ilave_puanlar_namaz) > 0): ?>
+            <h3 style="margin-top: 30px;">❌ Silinen İlave Namaz Puanları</h3>
             <table>
                 <thead>
                     <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th><th>Silme Nedeni</th><th>Silen</th><th>Silme Zamanı</th></tr>
                 </thead>
                 <tbody>
-                    <?php foreach($silinen_ilave_puanlar as $sip): ?>
+                    <?php foreach($silinen_ilave_puanlar_namaz as $sip): ?>
+                    <tr style="background: #fff3cd;">
+                        <td><?php echo date('d.m.Y', strtotime($sip['tarih'])); ?></td>
+                        <td><strong>+<?php echo $sip['puan']; ?></strong></td>
+                        <td><?php echo htmlspecialchars($sip['aciklama']); ?></td>
+                        <td><?php echo $sip['veren_kullanici']; ?></td>
+                        <td><?php echo htmlspecialchars($sip['silme_nedeni']); ?></td>
+                        <td><?php echo $sip['silen_kullanici']; ?></td>
+                        <td><?php echo date('d.m.Y H:i', strtotime($sip['silme_zamani'])); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            <?php endif; ?>
+
+            <!-- Silinen İlave Ders Puanları -->
+            <?php if(count($silinen_ilave_puanlar_ders) > 0): ?>
+            <h3 style="margin-top: 30px;">❌ Silinen İlave Ders Puanları</h3>
+            <table>
+                <thead>
+                    <tr><th>Tarih</th><th>Puan</th><th>Açıklama</th><th>Veren</th><th>Silme Nedeni</th><th>Silen</th><th>Silme Zamanı</th></tr>
+                </thead>
+                <tbody>
+                    <?php foreach($silinen_ilave_puanlar_ders as $sip): ?>
                     <tr style="background: #fff3cd;">
                         <td><?php echo date('d.m.Y', strtotime($sip['tarih'])); ?></td>
                         <td><strong>+<?php echo $sip['puan']; ?></strong></td>

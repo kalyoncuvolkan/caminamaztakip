@@ -43,11 +43,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_turkish_ci");
 
         $stmt = $pdo->prepare("INSERT INTO ilave_puan_silme_gecmisi
-            (ogrenci_id, puan, aciklama, veren_kullanici, tarih, silme_nedeni, silen_kullanici)
-            VALUES (?, ?, ?, ?, ?, ?, ?)");
+            (ogrenci_id, puan, kategori, aciklama, veren_kullanici, tarih, silme_nedeni, silen_kullanici)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $ilave_puan['ogrenci_id'],
             $ilave_puan['puan'],
+            $ilave_puan['kategori'] ?? 'Namaz',
             $ilave_puan['aciklama'],
             $ilave_puan['veren_kullanici'],
             $ilave_puan['tarih'],
