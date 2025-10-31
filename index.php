@@ -7,20 +7,20 @@ $yil = date('Y');
 $ay = date('n');
 
 $yillikBirinci = $pdo->prepare("
-    SELECT ad_soyad, toplam_namaz
+    SELECT ad_soyad, toplam_namaz, toplam_puan
     FROM yillik_ozetler
     WHERE yil = ?
-    ORDER BY toplam_namaz DESC
+    ORDER BY toplam_puan DESC, toplam_namaz DESC
     LIMIT 3
 ");
 $yillikBirinci->execute([$yil]);
 $yillikSiralama = $yillikBirinci->fetchAll();
 
 $aylikBirinci = $pdo->prepare("
-    SELECT ad_soyad, toplam_namaz
+    SELECT ad_soyad, toplam_namaz, toplam_puan
     FROM aylik_ozetler
     WHERE yil = ? AND ay = ?
-    ORDER BY toplam_namaz DESC
+    ORDER BY toplam_puan DESC, toplam_namaz DESC
     LIMIT 3
 ");
 $aylikBirinci->execute([$yil, $ay]);
@@ -41,7 +41,7 @@ require_once 'config/header.php';
                     <div class="siralama-item <?php echo $index == 0 ? 'birinci' : ($index == 1 ? 'ikinci' : 'ucuncu'); ?>">
                         <span class="sira"><?php echo siralama($index + 1); ?>:</span>
                         <span class="isim"><?php echo $ogrenci['ad_soyad'] ?? 'Henüz belirlenmedi'; ?></span>
-                        <span class="puan"><?php echo $ogrenci['toplam_namaz'] ?? '0'; ?> Vakit</span>
+                        <span class="puan"><?php echo $ogrenci['toplam_puan'] ?? '0'; ?> Puan (<?php echo $ogrenci['toplam_namaz'] ?? '0'; ?> Vakit)</span>
                     </div>
                     <?php endforeach; ?>
                     <?php for($i = count($yillikSiralama); $i < 3; $i++): ?>
@@ -60,7 +60,7 @@ require_once 'config/header.php';
                     <div class="siralama-item <?php echo $index == 0 ? 'birinci' : ($index == 1 ? 'ikinci' : 'ucuncu'); ?>">
                         <span class="sira"><?php echo siralama($index + 1); ?>:</span>
                         <span class="isim"><?php echo $ogrenci['ad_soyad'] ?? 'Henüz belirlenmedi'; ?></span>
-                        <span class="puan"><?php echo $ogrenci['toplam_namaz'] ?? '0'; ?> Vakit</span>
+                        <span class="puan"><?php echo $ogrenci['toplam_puan'] ?? '0'; ?> Puan (<?php echo $ogrenci['toplam_namaz'] ?? '0'; ?> Vakit)</span>
                     </div>
                     <?php endforeach; ?>
                     <?php for($i = count($aylikSiralama); $i < 3; $i++): ?>

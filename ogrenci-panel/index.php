@@ -32,9 +32,9 @@ $istatistikler = $stats->fetch();
 
 // Yıllık sıralama
 $yillik_siralama = $pdo->prepare("
-    SELECT ad_soyad, toplam_namaz,
+    SELECT ad_soyad, toplam_namaz, toplam_puan,
            (SELECT COUNT(*) + 1 FROM yillik_ozetler y2
-            WHERE y2.yil = y1.yil AND y2.toplam_namaz > y1.toplam_namaz) as siralama
+            WHERE y2.yil = y1.yil AND (y2.toplam_puan > y1.toplam_puan OR (y2.toplam_puan = y1.toplam_puan AND y2.toplam_namaz > y1.toplam_namaz))) as siralama
     FROM yillik_ozetler y1
     WHERE ogrenci_id = ? AND yil = ?
 ");
@@ -43,9 +43,9 @@ $yillik = $yillik_siralama->fetch();
 
 // Aylık sıralama
 $aylik_siralama = $pdo->prepare("
-    SELECT ad_soyad, toplam_namaz,
+    SELECT ad_soyad, toplam_namaz, toplam_puan,
            (SELECT COUNT(*) + 1 FROM aylik_ozetler a2
-            WHERE a2.yil = a1.yil AND a2.ay = a1.ay AND a2.toplam_namaz > a1.toplam_namaz) as siralama
+            WHERE a2.yil = a1.yil AND a2.ay = a1.ay AND (a2.toplam_puan > a1.toplam_puan OR (a2.toplam_puan = a1.toplam_puan AND a2.toplam_namaz > a1.toplam_namaz))) as siralama
     FROM aylik_ozetler a1
     WHERE ogrenci_id = ? AND yil = ? AND ay = ?
 ");
@@ -168,7 +168,8 @@ $aylik_namazlar = $aylara_gore->fetchAll();
                     </p>
                     <p style="color: #666; margin: 5px 0;">
                         <?php echo $toplam_ogrenci; ?> öğrenci arasında<br>
-                        <strong><?php echo $yillik['toplam_namaz']; ?> vakit namaz</strong> kıldın
+                        <strong><?php echo $yillik['toplam_puan']; ?> toplam puan</strong><br>
+                        <span style="font-size: 14px;">(<?php echo $yillik['toplam_namaz']; ?> vakit namaz + <?php echo $istatistikler['toplam_ilave_puan']; ?> ilave puan)</span>
                     </p>
                     <?php else: ?>
                     <p style="color: #999;">Bu yıl için henüz namaz kaydın yok.</p>
@@ -183,7 +184,8 @@ $aylik_namazlar = $aylara_gore->fetchAll();
                     </p>
                     <p style="color: #666; margin: 5px 0;">
                         <?php echo $toplam_ogrenci; ?> öğrenci arasında<br>
-                        <strong><?php echo $aylik['toplam_namaz']; ?> vakit namaz</strong> kıldın
+                        <strong><?php echo $aylik['toplam_puan']; ?> toplam puan</strong><br>
+                        <span style="font-size: 14px;">(<?php echo $aylik['toplam_namaz']; ?> vakit namaz)</span>
                     </p>
                     <?php else: ?>
                     <p style="color: #999;">Bu ay için henüz namaz kaydın yok.</p>

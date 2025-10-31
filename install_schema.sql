@@ -231,7 +231,8 @@ SELECT
     SUM(CASE WHEN n.kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) AS babasi_sayisi,
     SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) AS annesi_sayisi,
     SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END) AS anne_babasi_sayisi,
-    COUNT(*) AS toplam_namaz
+    COUNT(*) AS toplam_namaz,
+    (COUNT(*) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = YEAR(n.tarih)), 0)) AS toplam_puan
 FROM ogrenciler o
 LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
 GROUP BY o.id, YEAR(n.tarih);
@@ -249,7 +250,8 @@ SELECT
     SUM(CASE WHEN n.kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) AS babasi_sayisi,
     SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) AS annesi_sayisi,
     SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END) AS anne_babasi_sayisi,
-    COUNT(*) AS toplam_namaz
+    COUNT(*) AS toplam_namaz,
+    (COUNT(*) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = YEAR(n.tarih) AND MONTH(tarih) = MONTH(n.tarih)), 0)) AS toplam_puan
 FROM ogrenciler o
 LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
 GROUP BY o.id, YEAR(n.tarih), MONTH(n.tarih);
