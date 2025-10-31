@@ -1,4 +1,8 @@
 <?php
+// Hata raporlamayı aç (geliştirme için)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 require_once 'config/auth.php';
 checkAuth();
@@ -13,23 +17,47 @@ $mesaj = '';
 $hata = '';
 $guncellemeler = [];
 $guncelleme_var = false;
+$curl_available = function_exists('curl_init');
+$exec_available = function_exists('exec');
 
 // GitHub'dan son commit bilgisini al
 function getLatestCommit() {
     $url = 'https://api.github.com/repos/' . GITHUB_REPO . '/commits/' . GITHUB_BRANCH;
 
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $url);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_USERAGENT, 'CamiNamazTakip/2.0');
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    // cURL kontrolü
+    if(!function_exists('curl_init')) {
+        // cURL yoksa file_get_contents dene
+        $context = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => 'User-Agent: CamiNamazTakip/2.0'
+            ]
+        ]);
 
-    $response = curl_exec($ch);
-    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
+        $response = @file_get_contents($url, false, $context);
+        if($response !== false) {
+            return json_decode($response, true);
+        }
+        return null;
+    }
 
-    if($http_code == 200) {
-        return json_decode($response, true);
+    try {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'CamiNamazTakip/2.0');
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if($http_code == 200) {
+            return json_decode($response, true);
+        }
+    } catch(Exception $e) {
+        return null;
     }
 
     return null;
@@ -68,56 +96,77 @@ if(isset($_GET['check'])) {
 // Güncelleme işlemini başlat
 if(isset($_POST['update'])) {
     try {
+        // exec() kontrolü
+        if(!function_exists('exec')) {
+            throw new Exception("⚠️ exec() fonksiyonu sunucunuzda kapalı. Manuel güncelleme yapmanız gerekiyor.");
+        }
+
         // 1. Yedekleme
         $backup_dir = 'backups';
         if(!is_dir($backup_dir)) {
-            mkdir($backup_dir, 0755, true);
+            @mkdir($backup_dir, 0755, true);
         }
 
-        $backup_file = $backup_dir . '/backup_' . date('Y-m-d_H-i-s') . '.zip';
+        if(!is_writable($backup_dir)) {
+            throw new Exception("⚠️ backups/ klasörüne yazma izni yok. Lütfen chmod 777 backups/ yapın.");
+        }
 
-        // Basit dosya kopyalama yedeği
         $backup_sql = $backup_dir . '/database_' . date('Y-m-d_H-i-s') . '.sql';
 
         // Veritabanı yedeği (mysqldump kullanarak)
+        $db_backup_success = false;
         if(file_exists('config/db.php')) {
             include 'config/db.php';
-            $command = sprintf(
-                'mysqldump -h %s -u %s -p%s %s > %s 2>&1',
-                escapeshellarg($host),
-                escapeshellarg($username),
-                escapeshellarg($password),
-                escapeshellarg($dbname),
-                escapeshellarg($backup_sql)
-            );
-            exec($command, $output, $return_var);
+
+            // mysqldump var mı kontrol et
+            @exec('which mysqldump', $mysqldump_check, $mysqldump_return);
+
+            if($mysqldump_return === 0) {
+                $command = sprintf(
+                    'mysqldump -h %s -u %s %s %s > %s 2>&1',
+                    escapeshellarg($host),
+                    escapeshellarg($username),
+                    $password ? '-p' . escapeshellarg($password) : '',
+                    escapeshellarg($dbname),
+                    escapeshellarg($backup_sql)
+                );
+                @exec($command, $output, $return_var);
+                $db_backup_success = ($return_var === 0);
+            }
         }
 
         // 2. Git pull ile güncelleme
         $git_available = false;
-        exec('which git', $git_output, $git_return);
-        if($git_return === 0) {
+        @exec('which git 2>&1', $git_output, $git_return);
+
+        if($git_return === 0 && !empty($git_output)) {
             $git_available = true;
 
             // Git pull
-            exec('git pull origin main 2>&1', $output, $return_var);
+            @exec('git pull origin main 2>&1', $output, $return_var);
 
             if($return_var === 0) {
-                // 3. İzinleri düzelt
-                exec('chmod -R 755 . 2>&1');
+                // 3. İzinleri düzelt (hata çıkarsa devam et)
+                @exec('chmod -R 755 . 2>&1', $chmod_output);
 
                 // 4. Cache temizle (varsa)
                 if(is_dir('cache')) {
-                    array_map('unlink', glob('cache/*'));
+                    $cache_files = glob('cache/*');
+                    if($cache_files) {
+                        array_map('unlink', $cache_files);
+                    }
                 }
 
-                $mesaj = "✅ Güncelleme başarıyla tamamlandı!\n\nYedek: " . $backup_sql;
+                $mesaj = "✅ Güncelleme başarıyla tamamlandı!";
+                if($db_backup_success) {
+                    $mesaj .= "\n\n💾 Veritabanı yedeği: " . basename($backup_sql);
+                }
             } else {
-                throw new Exception("Git pull hatası: " . implode("\n", $output));
+                throw new Exception("❌ Git pull hatası:\n" . implode("\n", $output));
             }
         } else {
             // Git yoksa manuel güncelleme talimatı
-            throw new Exception("Git bulunamadı! Manuel güncelleme yapmanız gerekiyor.");
+            throw new Exception("⚠️ Git bulunamadı!\n\nManuel güncelleme için:\n1. GitHub'dan ZIP indir\n2. FTP ile dosyaları yükle\n3. config/db.php dosyasını koruyun");
         }
 
     } catch(Exception $e) {
@@ -127,9 +176,23 @@ if(isset($_POST['update'])) {
 
 // Yerel değişiklikleri kontrol et
 $has_changes = false;
-if(is_dir('.git')) {
-    exec('git status --porcelain 2>&1', $status_output);
+if(is_dir('.git') && $exec_available) {
+    @exec('git status --porcelain 2>&1', $status_output);
     $has_changes = !empty($status_output);
+}
+
+// Sistem gereksinimleri kontrolü
+$requirements = [
+    'git' => false,
+    'curl' => $curl_available,
+    'exec' => $exec_available,
+    'git_folder' => is_dir('.git'),
+    'backups_writable' => is_writable('backups') || is_writable('.')
+];
+
+if($exec_available) {
+    @exec('which git 2>&1', $git_check, $git_return);
+    $requirements['git'] = ($git_return === 0);
 }
 
 $aktif_sayfa = 'update';
@@ -298,6 +361,47 @@ require_once 'config/header.php';
         <?php echo nl2br(htmlspecialchars($hata)); ?>
     </div>
     <?php endif; ?>
+
+    <!-- Sistem Gereksinimleri -->
+    <div class="version-card">
+        <h3>⚙️ Sistem Gereksinimleri</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px;">
+            <div style="padding: 15px; background: <?php echo $requirements['git'] ? '#d4edda' : '#f8d7da'; ?>; border-radius: 8px;">
+                <strong>Git:</strong>
+                <span style="float: right;"><?php echo $requirements['git'] ? '✅' : '❌'; ?></span>
+            </div>
+            <div style="padding: 15px; background: <?php echo $requirements['curl'] ? '#d4edda' : '#f8d7da'; ?>; border-radius: 8px;">
+                <strong>cURL:</strong>
+                <span style="float: right;"><?php echo $requirements['curl'] ? '✅' : '❌'; ?></span>
+            </div>
+            <div style="padding: 15px; background: <?php echo $requirements['exec'] ? '#d4edda' : '#f8d7da'; ?>; border-radius: 8px;">
+                <strong>exec():</strong>
+                <span style="float: right;"><?php echo $requirements['exec'] ? '✅' : '❌'; ?></span>
+            </div>
+            <div style="padding: 15px; background: <?php echo $requirements['git_folder'] ? '#d4edda' : '#fff3cd'; ?>; border-radius: 8px;">
+                <strong>.git Klasörü:</strong>
+                <span style="float: right;"><?php echo $requirements['git_folder'] ? '✅' : '⚠️'; ?></span>
+            </div>
+            <div style="padding: 15px; background: <?php echo $requirements['backups_writable'] ? '#d4edda' : '#f8d7da'; ?>; border-radius: 8px;">
+                <strong>Yazma İzni:</strong>
+                <span style="float: right;"><?php echo $requirements['backups_writable'] ? '✅' : '❌'; ?></span>
+            </div>
+        </div>
+
+        <?php if(!$requirements['git'] || !$requirements['exec']): ?>
+        <div class="warning-box" style="margin-top: 20px;">
+            <strong>⚠️ Otomatik güncelleme kullanılamıyor!</strong><br>
+            <?php if(!$requirements['exec']): ?>
+            • exec() fonksiyonu kapalı - Hosting sağlayıcınızdan aktif etmesini isteyin<br>
+            <?php endif; ?>
+            <?php if(!$requirements['git']): ?>
+            • Git kurulu değil - Manuel güncelleme yapmanız gerekiyor<br>
+            <?php endif; ?>
+            <br>
+            <strong>Çözüm:</strong> Aşağıdaki "Manuel Güncelleme" bölümünden FTP ile güncelleyebilirsiniz.
+        </div>
+        <?php endif; ?>
+    </div>
 
     <!-- Mevcut Durum -->
     <div class="version-card">
