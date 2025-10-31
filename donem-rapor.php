@@ -195,8 +195,79 @@ $sayfa_basligi = 'Dönem Raporu - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Taki
 require_once 'config/header.php';
 ?>
 
+<style>
+    @media print {
+        /* Hide navigation and buttons when printing */
+        header, nav, .no-print {
+            display: none !important;
+        }
+
+        /* Reset page margins */
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: none;
+            box-shadow: none;
+        }
+
+        /* Prevent page breaks inside elements */
+        .stat-card, table, .category-section {
+            page-break-inside: avoid;
+        }
+
+        /* Improve print colors */
+        .gradient-header {
+            background: #667eea !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Print table borders */
+        table {
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            border: 1px solid #000 !important;
+        }
+    }
+
+    .print-button {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 50px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s;
+        z-index: 1000;
+    }
+
+    .print-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 30px rgba(102, 126, 234, 0.6);
+    }
+</style>
+
+<button class="print-button no-print" onclick="window.print()">🖨️ PDF Olarak Kaydet</button>
+
 <div style="padding: 30px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+    <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
         <h2 style="margin: 0;">📊 Dönem Sonu Raporu</h2>
         <div>
             <a href="donem-rapor.php?id=<?php echo $ogrenci_id; ?>&format=excel" class="btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px; margin-right: 10px;">
@@ -209,7 +280,7 @@ require_once 'config/header.php';
     </div>
 
     <!-- Öğrenci Bilgileri -->
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
+    <div class="gradient-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px;">
         <div style="text-align: center; margin-bottom: 20px;">
             <h1 style="margin: 0; font-size: 32px;">DÖNEM SONU RAPORU</h1>
             <p style="margin: 10px 0 0 0; font-size: 18px; opacity: 0.9;">ATAKÖY CAMİİ - <?php echo date('Y'); ?> YILI</p>
