@@ -86,6 +86,15 @@ $siralama = $siralama_query->fetchColumn();
 
 $toplam_ogrenci = $pdo->query("SELECT COUNT(*) FROM ogrenciler WHERE aktif = 1")->fetchColumn();
 
+// Eklenebilir ders sayısını hesapla
+$eklenebilir_ders_sayisi = $pdo->prepare("
+    SELECT COUNT(*) FROM dersler d
+    LEFT JOIN ogrenci_dersler od ON d.id = od.ders_id AND od.ogrenci_id = ?
+    WHERE d.aktif = 1 AND od.id IS NULL
+");
+$eklenebilir_ders_sayisi->execute([$ogrenci_id]);
+$eklenebilir_toplam = $eklenebilir_ders_sayisi->fetchColumn();
+
 $aktif_sayfa = 'ogrenciler';
 $sayfa_basligi = 'Dersler - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Takip';
 require_once 'config/header.php';
@@ -123,34 +132,48 @@ require_once 'config/header.php';
     <!-- Ders Ekleme Butonu -->
     <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
         <h3 style="margin: 0 0 15px 0;">➕ Yeni Ders Ekle</h3>
+        <?php if($eklenebilir_toplam > 0): ?>
         <form id="dersEkleForm" style="display: grid; grid-template-columns: 1fr auto; gap: 15px; align-items: end;">
             <div>
                 <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ders Seçin:</label>
                 <select name="ders_id" id="ders_id" required style="width: 100%; padding: 10px; border-radius: 5px; border: 2px solid #ddd;">
                     <option value="">Kategori ve ders seçin...</option>
-                    <?php foreach($kategoriler as $kat): ?>
+                    <?php
+                    foreach($kategoriler as $kat):
+                        $tum_dersler = $pdo->prepare("
+                            SELECT d.* FROM dersler d
+                            LEFT JOIN ogrenci_dersler od ON d.id = od.ders_id AND od.ogrenci_id = ?
+                            WHERE d.kategori_id = ? AND d.aktif = 1 AND od.id IS NULL
+                            ORDER BY d.sira, d.ders_adi
+                        ");
+                        $tum_dersler->execute([$ogrenci_id, $kat['id']]);
+                        $eklenebilir_dersler = $tum_dersler->fetchAll();
+
+                        if(count($eklenebilir_dersler) > 0):
+                    ?>
                         <optgroup label="<?php echo htmlspecialchars($kat['kategori_adi']); ?>">
-                            <?php
-                            $tum_dersler = $pdo->prepare("
-                                SELECT d.* FROM dersler d
-                                LEFT JOIN ogrenci_dersler od ON d.id = od.ders_id AND od.ogrenci_id = ?
-                                WHERE d.kategori_id = ? AND d.aktif = 1 AND od.id IS NULL
-                                ORDER BY d.sira, d.ders_adi
-                            ");
-                            $tum_dersler->execute([$ogrenci_id, $kat['id']]);
-                            $eklenebilir_dersler = $tum_dersler->fetchAll();
-                            foreach($eklenebilir_dersler as $ders):
-                            ?>
+                            <?php foreach($eklenebilir_dersler as $ders): ?>
                             <option value="<?php echo $ders['id']; ?>"><?php echo htmlspecialchars($ders['ders_adi']); ?> (<?php echo $ders['puan']; ?> puan)</option>
                             <?php endforeach; ?>
                         </optgroup>
-                    <?php endforeach; ?>
+                    <?php
+                        endif;
+                    endforeach;
+                    ?>
                 </select>
             </div>
             <button type="button" onclick="dersEkle()" class="btn-primary" style="padding: 10px 30px; height: fit-content;">
                 💾 Ekle
             </button>
         </form>
+        <?php else: ?>
+        <div class="alert info" style="background: #d1ecf1; color: #0c5460; padding: 15px; border-radius: 8px; border-left: 4px solid #17a2b8;">
+            <strong>ℹ️ Bilgi:</strong> Bu öğrenciye eklenebilecek yeni ders bulunmamaktadır. Tüm aktif dersler zaten öğrenciye atanmış durumda.
+            <div style="margin-top: 10px;">
+                <a href="ders-kategorileri.php" style="color: #0c5460; text-decoration: underline;">📚 Yeni ders eklemek için tıklayın</a>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Dersler (Kategorilere göre) -->
