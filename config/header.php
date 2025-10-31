@@ -112,6 +112,7 @@
                     <a href="sertifikalar.php" class="<?php echo ($aktif_sayfa ?? '') == 'sertifikalar' ? 'active' : ''; ?>">📜 Sertifikalar</a>
                     <a href="mesajlar.php" class="<?php echo ($aktif_sayfa ?? '') == 'mesajlar' ? 'active' : ''; ?>">💬 Mesajlar</a>
                     <a href="genel-rapor.php" class="<?php echo ($aktif_sayfa ?? '') == 'raporlar' ? 'active' : ''; ?>">📊 Raporlar</a>
+                    <a href="update.php" class="<?php echo ($aktif_sayfa ?? '') == 'update' ? 'active' : ''; ?>">🔄 Güncellemeler</a>
                     <a href="yedekleme.php" class="<?php echo ($aktif_sayfa ?? '') == 'yedekleme' ? 'active' : ''; ?>">💾 Yedekleme</a>
                 </div>
                 <a href="logout.php" class="logout-link" style="background: rgba(255,255,255,0.3);">👤 <?php echo getLoggedInUser(); ?> - Çıkış</a>

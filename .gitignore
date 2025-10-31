@@ -18,6 +18,7 @@ Thumbs.db
 # Database backup
 *.sql.bak
 backup/
+backups/
 
 # Temporary files
 tmp/
