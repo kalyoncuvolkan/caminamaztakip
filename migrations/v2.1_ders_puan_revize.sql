@@ -18,12 +18,5 @@ ADD INDEX `idx_kategori` (`kategori`);
 -- Mevcut ilave puanları "Namaz" kategorisine ata (varsayılan)
 UPDATE `ilave_puanlar` SET `kategori` = 'Namaz' WHERE `kategori` IS NULL;
 
--- İlave puan silme geçmişine de kategori ekle
-ALTER TABLE `ilave_puan_silme_gecmisi`
-ADD COLUMN `kategori` ENUM('Namaz', 'Ders') DEFAULT 'Namaz' COMMENT 'Puan kategorisi' AFTER `puan`;
-
--- Mevcut silinen ilave puanları da "Namaz" kategorisine ata
-UPDATE `ilave_puan_silme_gecmisi` SET `kategori` = 'Namaz' WHERE `kategori` IS NULL;
-
 -- Migration tamamlandı
 -- Bu scripti sadece bir kez çalıştırın!
