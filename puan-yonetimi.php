@@ -6,13 +6,41 @@ require_once 'config/db.php';
 $ogrenci_id = $_GET['id'] ?? 0;
 $mesaj = '';
 
+// Öğrenci seçilmemişse, öğrenci listesini göster
+if(!$ogrenci_id) {
+    // Öğrenci listesi
+    $ogrenciler = $pdo->query("SELECT * FROM ogrenciler WHERE aktif = 1 ORDER BY ad_soyad")->fetchAll();
+
+    $aktif_sayfa = 'puan';
+    $sayfa_basligi = 'Puan Yönetimi - Öğrenci Seçin';
+    require_once 'config/header.php';
+    ?>
+    <div style="padding: 30px;">
+        <h2>⭐ Puan Yönetimi - Öğrenci Seçin</h2>
+        <p style="color: #666; margin-bottom: 20px;">İlave puan eklemek veya puan silmek için bir öğrenci seçin:</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
+            <?php foreach($ogrenciler as $ogr): ?>
+            <a href="puan-yonetimi.php?id=<?php echo $ogr['id']; ?>" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)';">
+                <div style="font-size: 24px; margin-bottom: 10px;">👤</div>
+                <div style="font-weight: 600; font-size: 18px;"><?php echo htmlspecialchars($ogr['ad_soyad']); ?></div>
+                <div style="opacity: 0.9; font-size: 14px; margin-top: 5px;">Yaş: <?php echo yasHesapla($ogr['dogum_tarihi']); ?></div>
+            </a>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php
+    require_once 'config/footer.php';
+    exit;
+}
+
 // Öğrenci bilgileri
 $ogrenci_stmt = $pdo->prepare("SELECT * FROM ogrenciler WHERE id = ?");
 $ogrenci_stmt->execute([$ogrenci_id]);
 $ogrenci = $ogrenci_stmt->fetch();
 
 if(!$ogrenci) {
-    header('Location: ogrenciler.php');
+    header('Location: puan-yonetimi.php');
     exit;
 }
 
@@ -54,7 +82,12 @@ require_once 'config/header.php';
 ?>
 
         <div style="padding: 30px;">
-            <h2>⭐ Puan Yönetimi: <?php echo $ogrenci['ad_soyad']; ?></h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">⭐ Puan Yönetimi: <?php echo $ogrenci['ad_soyad']; ?></h2>
+                <a href="puan-yonetimi.php" style="background: #6c757d; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                    ← Öğrenci Listesi
+                </a>
+            </div>
 
             <!-- İlave Puan Ekle -->
             <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 20px 0;">
