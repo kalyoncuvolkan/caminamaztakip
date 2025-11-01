@@ -52,43 +52,108 @@ try {
         ]);
 
         // exec() fonksiyonu devre dışı mı kontrol et
-        $disabled_functions = explode(',', ini_get('disable_functions'));
+        $disabled_functions = explode(',', str_replace(' ', '', ini_get('disable_functions')));
         $exec_disabled = in_array('exec', $disabled_functions);
 
-        if ($exec_disabled) {
-            logBackupError('ERROR: exec() function is disabled on this server');
-            throw new Exception('exec() fonksiyonu bu sunucuda devre dışı. Shared hosting\'de mysqldump kullanılamaz.');
-        }
+        logBackupError('Checking exec() availability', ['disabled' => $exec_disabled]);
 
-        // mysqldump komutu oluştur (global değişkenler zaten var)
-        $db_host = $host ?? 'localhost';
-        $db_user = $username ?? 'root';
-        $db_pass = $password ?? '';
-        $db_name = $dbname ?? 'cami_namaz_takip';
+        // PHP-based backup (exec kullanmadan)
+        try {
+            $sql_dump = "";
 
-        // Şifre boşsa -p kullanma
-        $pass_param = !empty($db_pass) ? "-p'" . addslashes($db_pass) . "'" : '';
+            // Header
+            $sql_dump .= "-- Cami Namaz Takip Veritabanı Yedekleme\n";
+            $sql_dump .= "-- Tarih: " . date('Y-m-d H:i:s') . "\n";
+            $sql_dump .= "-- Database: {$dbname}\n\n";
+            $sql_dump .= "SET FOREIGN_KEY_CHECKS=0;\n";
+            $sql_dump .= "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n";
+            $sql_dump .= "SET time_zone = \"+00:00\";\n\n";
 
-        $cmd = "mysqldump -h {$db_host} -u {$db_user} {$pass_param} {$db_name} > {$dosya} 2>&1";
+            // Tüm tabloları al
+            $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+            logBackupError('Tables found', ['count' => count($tables), 'tables' => $tables]);
 
-        logBackupError('Executing mysqldump', ['command' => str_replace($db_pass, '***', $cmd)]);
+            foreach ($tables as $table) {
+                // VIEW'ları atla (daha sonra ekleriz)
+                $table_type = $pdo->query("SHOW FULL TABLES WHERE Tables_in_{$dbname} = '{$table}'")->fetch();
+                if ($table_type && isset($table_type[1]) && $table_type[1] === 'VIEW') {
+                    logBackupError('Skipping VIEW', ['table' => $table]);
+                    continue;
+                }
 
-        exec($cmd, $output, $return);
+                logBackupError('Processing table', ['table' => $table]);
 
-        logBackupError('mysqldump completed', [
-            'return_code' => $return,
-            'output' => implode("\n", $output),
-            'file_exists' => file_exists($dosya),
-            'file_size' => file_exists($dosya) ? filesize($dosya) : 0
-        ]);
+                // Tablo yapısını al
+                $sql_dump .= "\n-- --------------------------------------------------------\n";
+                $sql_dump .= "-- Tablo yapısı: `{$table}`\n";
+                $sql_dump .= "-- --------------------------------------------------------\n\n";
+                $sql_dump .= "DROP TABLE IF EXISTS `{$table}`;\n";
 
-        if($return === 0 && file_exists($dosya) && filesize($dosya) > 0) {
-            $mesaj = "✅ Yedekleme başarılı: " . basename($dosya) . " (" . round(filesize($dosya)/1024, 2) . " KB)";
-            logBackupError('Backup successful');
-        } else {
-            $hata_detay = implode("\n", $output);
-            $mesaj = "❌ Yedekleme hatası! Detaylar: logs/yedekleme-errors.log";
-            logBackupError('Backup failed', ['output' => $hata_detay]);
+                $create_table = $pdo->query("SHOW CREATE TABLE `{$table}`")->fetch();
+                $sql_dump .= $create_table['Create Table'] . ";\n\n";
+
+                // Tablo verilerini al
+                $row_count = $pdo->query("SELECT COUNT(*) FROM `{$table}`")->fetchColumn();
+                logBackupError('Table row count', ['table' => $table, 'rows' => $row_count]);
+
+                if ($row_count > 0) {
+                    $sql_dump .= "-- Veri dökümü: `{$table}` ({$row_count} satır)\n\n";
+
+                    $rows = $pdo->query("SELECT * FROM `{$table}`")->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach ($rows as $row) {
+                        $values = array_map(function($value) use ($pdo) {
+                            if ($value === null) return 'NULL';
+                            return $pdo->quote($value);
+                        }, $row);
+
+                        $sql_dump .= "INSERT INTO `{$table}` VALUES (" . implode(', ', $values) . ");\n";
+                    }
+                    $sql_dump .= "\n";
+                }
+            }
+
+            // VIEW'ları ekle
+            $views = $pdo->query("SHOW FULL TABLES WHERE Table_type = 'VIEW'")->fetchAll(PDO::FETCH_COLUMN);
+            if (count($views) > 0) {
+                $sql_dump .= "\n-- --------------------------------------------------------\n";
+                $sql_dump .= "-- VIEW'lar\n";
+                $sql_dump .= "-- --------------------------------------------------------\n\n";
+
+                foreach ($views as $view) {
+                    logBackupError('Processing VIEW', ['view' => $view]);
+                    $sql_dump .= "DROP VIEW IF EXISTS `{$view}`;\n";
+                    $create_view = $pdo->query("SHOW CREATE VIEW `{$view}`")->fetch();
+                    $sql_dump .= $create_view['Create View'] . ";\n\n";
+                }
+            }
+
+            $sql_dump .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+            // Dosyaya yaz
+            $bytes_written = file_put_contents($dosya, $sql_dump);
+
+            logBackupError('Backup file written', [
+                'bytes' => $bytes_written,
+                'file_size' => filesize($dosya),
+                'tables' => count($tables)
+            ]);
+
+            if ($bytes_written > 0 && file_exists($dosya)) {
+                $mesaj = "✅ Yedekleme başarılı: " . basename($dosya) . " (" . round(filesize($dosya)/1024, 2) . " KB)";
+                logBackupError('Backup successful');
+            } else {
+                throw new Exception('Yedek dosyası oluşturulamadı!');
+            }
+
+        } catch (PDOException $e) {
+            $hata_detay = $e->getMessage();
+            $mesaj = "❌ Veritabanı hatası: " . htmlspecialchars($e->getMessage());
+            logBackupError('Backup failed - PDO Exception', ['error' => $e->getMessage()]);
+        } catch (Exception $e) {
+            $hata_detay = $e->getMessage();
+            $mesaj = "❌ Yedekleme hatası: " . htmlspecialchars($e->getMessage());
+            logBackupError('Backup failed - Exception', ['error' => $e->getMessage()]);
         }
     }
 
