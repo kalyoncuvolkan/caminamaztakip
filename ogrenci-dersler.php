@@ -126,15 +126,29 @@ $eklenebilir_ders_sayisi = $pdo->prepare("
 $eklenebilir_ders_sayisi->execute([$ogrenci_id]);
 $eklenebilir_toplam = $eklenebilir_ders_sayisi->fetchColumn();
 
-// Silinen dersleri çek
-$silinen_dersler_query = $pdo->prepare("
-    SELECT * FROM ogrenci_ders_silme_gecmisi
-    WHERE ogrenci_id = ?
-    ORDER BY silme_zamani DESC
-    LIMIT 20
-");
-$silinen_dersler_query->execute([$ogrenci_id]);
-$silinen_dersler = $silinen_dersler_query->fetchAll();
+// Silinen dersleri çek (eğer tablo varsa)
+$silinen_dersler = [];
+try {
+    // Önce tabloyu kontrol et
+    $table_check = $pdo->query("SHOW TABLES LIKE 'ogrenci_ders_silme_gecmisi'")->fetch();
+    if ($table_check) {
+        $silinen_dersler_query = $pdo->prepare("
+            SELECT * FROM ogrenci_ders_silme_gecmisi
+            WHERE ogrenci_id = ?
+            ORDER BY silme_zamani DESC
+            LIMIT 20
+        ");
+        $silinen_dersler_query->execute([$ogrenci_id]);
+        $silinen_dersler = $silinen_dersler_query->fetchAll();
+        logError('Deleted lessons loaded', ['count' => count($silinen_dersler)]);
+    } else {
+        logError('WARNING: ogrenci_ders_silme_gecmisi table does not exist. Please apply migration v2.3');
+    }
+} catch (PDOException $e) {
+    // Tablo yoksa sadece logla, hata verme
+    logError('ERROR loading deleted lessons (table might not exist)', ['error' => $e->getMessage()]);
+    $silinen_dersler = [];
+}
 
 $aktif_sayfa = 'ogrenciler';
 $sayfa_basligi = 'Dersler - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Takip';
