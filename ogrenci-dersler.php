@@ -1,9 +1,15 @@
 <?php
-require_once 'config/auth.php';
-checkAuth();
-require_once 'config/db.php';
+// Debug mode - hatalar ekranda gösterilir
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
-$ogrenci_id = $_GET['id'] ?? 0;
+try {
+    require_once 'config/auth.php';
+    checkAuth();
+    require_once 'config/db.php';
+
+    $ogrenci_id = $_GET['id'] ?? 0;
 
 // Öğrenci bilgisi
 $ogrenci_stmt = $pdo->prepare("SELECT * FROM ogrenciler WHERE id = ?");
@@ -489,4 +495,52 @@ function dersYenidenAta(dersId, dersAdi) {
 }
 </script>
 
-<?php require_once 'config/footer.php'; ?>
+<?php
+} catch(PDOException $e) {
+    // Veritabanı hatası - Detaylı hata göster
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hata</title>';
+    echo '<style>body{font-family:Arial;padding:20px;background:#f5f5f5}';
+    echo '.error{background:#fff;border-left:5px solid #dc3545;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}';
+    echo 'h1{color:#dc3545;margin-top:0}pre{background:#f8f9fa;padding:15px;border-radius:5px;overflow-x:auto}';
+    echo '.info{background:#d1ecf1;border-left:5px solid #0c5460;padding:15px;margin-top:20px;border-radius:5px}';
+    echo '</style></head><body>';
+    echo '<div class="error">';
+    echo '<h1>🐛 Veritabanı Hatası</h1>';
+    echo '<p><strong>Hata Mesajı:</strong> ' . htmlspecialchars($e->getMessage()) . '</p>';
+    echo '<p><strong>Hata Kodu:</strong> ' . $e->getCode() . '</p>';
+    echo '<p><strong>Dosya:</strong> ' . $e->getFile() . ':' . $e->getLine() . '</p>';
+    echo '<h3>Stack Trace:</h3>';
+    echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+    echo '</div>';
+
+    echo '<div class="info">';
+    echo '<h3>💡 Olası Çözümler:</h3>';
+    echo '<ul>';
+    echo '<li>Eğer "Column not found" hatası alıyorsanız: Migration dosyalarının uygulandığından emin olun</li>';
+    echo '<li>Eğer "Table doesn\'t exist" hatası alıyorsanız: Veritabanı schema\'sını kontrol edin</li>';
+    echo '<li>Eğer "Unknown column" hatası alıyorsanız: VIEW\'ları yeniden oluşturun (migrations/v2.2_view_toplam_puan.sql)</li>';
+    echo '</ul>';
+    echo '<p><strong>Öğrenci ID:</strong> ' . htmlspecialchars($ogrenci_id ?? 'N/A') . '</p>';
+    echo '</div>';
+    echo '</body></html>';
+    exit;
+} catch(Exception $e) {
+    // Genel hata
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hata</title>';
+    echo '<style>body{font-family:Arial;padding:20px;background:#f5f5f5}';
+    echo '.error{background:#fff;border-left:5px solid #dc3545;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}';
+    echo 'h1{color:#dc3545;margin-top:0}pre{background:#f8f9fa;padding:15px;border-radius:5px;overflow-x:auto}';
+    echo '</style></head><body>';
+    echo '<div class="error">';
+    echo '<h1>❌ Genel Hata</h1>';
+    echo '<p><strong>Hata Mesajı:</strong> ' . htmlspecialchars($e->getMessage()) . '</p>';
+    echo '<p><strong>Dosya:</strong> ' . $e->getFile() . ':' . $e->getLine() . '</p>';
+    echo '<h3>Stack Trace:</h3>';
+    echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
+    echo '</div>';
+    echo '</body></html>';
+    exit;
+}
+
+require_once 'config/footer.php';
+?>
