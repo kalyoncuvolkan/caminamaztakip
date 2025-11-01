@@ -135,13 +135,28 @@ require_once 'config/header.php';
         function exportExcel() {
             var table = document.querySelector('.rapor-tablo table');
             var html = table.outerHTML;
-            var url = 'data:application/vnd.ms-excel,' + encodeURIComponent(html);
+
+            // UTF-8 BOM (Byte Order Mark) ekle - Türkçe karakterler için gerekli
+            var bom = "\uFEFF";
+            var htmlWithBom = bom + '<html><head><meta charset="UTF-8"></head><body>' + html + '</body></html>';
+
+            // Excel için doğru MIME type ve encoding
+            var blob = new Blob([htmlWithBom], {
+                type: 'application/vnd.ms-excel;charset=utf-8'
+            });
+
+            var url = URL.createObjectURL(blob);
             var downloadLink = document.createElement("a");
             document.body.appendChild(downloadLink);
             downloadLink.href = url;
             downloadLink.download = 'namaz_raporu_<?php echo $ay; ?>_<?php echo $yil; ?>.xls';
             downloadLink.click();
             document.body.removeChild(downloadLink);
+
+            // URL'i temizle
+            setTimeout(function() {
+                URL.revokeObjectURL(url);
+            }, 100);
         }
     </script>
 <?php require_once 'config/footer.php'; ?>
