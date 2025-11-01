@@ -1,0 +1,80 @@
+name: 🚀 FTP Deploy to Production
+
+# Ne zaman çalışacak?
+on:
+  push:
+    branches: [ main ]  # main branch'e push yapıldığında otomatik deploy
+  workflow_dispatch:   # Manuel tetikleme (GitHub Actions sekmesinden)
+
+jobs:
+  deploy:
+    name: 📦 Deploy to FTP Server
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Kodu GitHub'dan al
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 2  # Son 2 commit'i al (değişiklikleri görmek için)
+
+    # 2. Değişen dosyaları göster (log için)
+    - name: 📋 Show Changed Files
+      run: |
+        echo "🔍 Değişen dosyalar:"
+        git diff --name-only HEAD^ HEAD || echo "İlk commit veya tek dosya"
+
+    # 3. FTP ile sunucuya yükle
+    - name: 🚀 FTP Deploy
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+
+        # Hedef klasör (sunucudaki)
+        server-dir: /public_html/
+
+        # Yüklenecek dosyalar (varsayılan: tüm dosyalar)
+        # Eğer sadece belirli bir klasör yüklemek isterseniz:
+        # local-dir: ./  # Yerel klasör (repository root)
+
+        # Yüklenmeyecek dosyalar/klasörler
+        exclude: |
+          **/.git*
+          **/.git*/**
+          **/node_modules/**
+          **/vendor/**
+          **/.env.local
+          **/.DS_Store
+          **/Thumbs.db
+          .github/**
+          .gitignore
+          README.md
+          LICENSE
+          composer.json
+          composer.lock
+          package.json
+          package-lock.json
+          .editorconfig
+
+        # Log seviyeleri: minimal, standard, verbose
+        log-level: standard
+
+        # Güvenlik: Sunucudaki ekstra dosyaları silme (dikkatli kullanın!)
+        # dangerous-clean-slate: false  # true yapmayın, manuel yüklenen dosyalar silinir!
+
+    # 4. Deployment sonrası bilgilendirme
+    - name: ✅ Deployment Complete
+      if: success()
+      run: |
+        echo "🎉 Deployment başarılı!"
+        echo "📅 Tarih: $(date)"
+        echo "🔗 Site: https://yourdomain.com"
+
+    # 5. Hata durumunda bilgilendirme
+    - name: ❌ Deployment Failed
+      if: failure()
+      run: |
+        echo "💥 Deployment başarısız!"
+        echo "📋 Lütfen logları kontrol edin"
