@@ -1,15 +1,40 @@
 <?php
-// Debug mode - hatalar ekranda gösterilir
+// Debug mode - hatalar hem ekranda hem log dosyasında gösterilir
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/logs/ogrenci-dersler-errors.log');
+
+// Log klasörünü oluştur
+if (!file_exists(__DIR__ . '/logs')) {
+    mkdir(__DIR__ . '/logs', 0755, true);
+}
+
+// Özel hata logger fonksiyonu
+function logError($message, $context = []) {
+    $logFile = __DIR__ . '/logs/ogrenci-dersler-errors.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $contextStr = !empty($context) ? ' | Context: ' . json_encode($context, JSON_UNESCAPED_UNICODE) : '';
+    $logMessage = "[{$timestamp}] {$message}{$contextStr}\n";
+    file_put_contents($logFile, $logMessage, FILE_APPEND);
+}
+
+// Script başlangıcını logla
+logError('=== SCRIPT STARTED ===', ['ogrenci_id' => $_GET['id'] ?? 'N/A', 'ip' => $_SERVER['REMOTE_ADDR'] ?? 'N/A']);
 
 try {
+    logError('Loading auth.php');
     require_once 'config/auth.php';
+
+    logError('Checking authentication');
     checkAuth();
+
+    logError('Loading db.php');
     require_once 'config/db.php';
 
     $ogrenci_id = $_GET['id'] ?? 0;
+    logError('Processing ogrenci_id', ['ogrenci_id' => $ogrenci_id]);
 
 // Öğrenci bilgisi
 $ogrenci_stmt = $pdo->prepare("SELECT * FROM ogrenciler WHERE id = ?");
@@ -496,13 +521,24 @@ function dersYenidenAta(dersId, dersAdi) {
 </script>
 
 <?php
+    logError('=== SCRIPT COMPLETED SUCCESSFULLY ===');
 } catch(PDOException $e) {
-    // Veritabanı hatası - Detaylı hata göster
+    // Veritabanı hatası - Hem logla hem göster
+    logError('!!! PDO EXCEPTION !!!', [
+        'message' => $e->getMessage(),
+        'code' => $e->getCode(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString(),
+        'ogrenci_id' => $ogrenci_id ?? 'N/A'
+    ]);
+
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hata</title>';
     echo '<style>body{font-family:Arial;padding:20px;background:#f5f5f5}';
     echo '.error{background:#fff;border-left:5px solid #dc3545;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}';
     echo 'h1{color:#dc3545;margin-top:0}pre{background:#f8f9fa;padding:15px;border-radius:5px;overflow-x:auto}';
     echo '.info{background:#d1ecf1;border-left:5px solid #0c5460;padding:15px;margin-top:20px;border-radius:5px}';
+    echo '.log-info{background:#fff3cd;border-left:5px solid #856404;padding:15px;margin-top:20px;border-radius:5px}';
     echo '</style></head><body>';
     echo '<div class="error">';
     echo '<h1>🐛 Veritabanı Hatası</h1>';
@@ -522,14 +558,30 @@ function dersYenidenAta(dersId, dersAdi) {
     echo '</ul>';
     echo '<p><strong>Öğrenci ID:</strong> ' . htmlspecialchars($ogrenci_id ?? 'N/A') . '</p>';
     echo '</div>';
+
+    echo '<div class="log-info">';
+    echo '<h3>📋 Log Dosyası</h3>';
+    echo '<p>Hata detayları <code>logs/ogrenci-dersler-errors.log</code> dosyasına kaydedildi.</p>';
+    echo '<p><strong>Log konumu:</strong> ' . __DIR__ . '/logs/ogrenci-dersler-errors.log</p>';
+    echo '</div>';
+
     echo '</body></html>';
     exit;
 } catch(Exception $e) {
-    // Genel hata
+    // Genel hata - Hem logla hem göster
+    logError('!!! GENERAL EXCEPTION !!!', [
+        'message' => $e->getMessage(),
+        'file' => $e->getFile(),
+        'line' => $e->getLine(),
+        'trace' => $e->getTraceAsString(),
+        'ogrenci_id' => $ogrenci_id ?? 'N/A'
+    ]);
+
     echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Hata</title>';
     echo '<style>body{font-family:Arial;padding:20px;background:#f5f5f5}';
     echo '.error{background:#fff;border-left:5px solid #dc3545;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}';
     echo 'h1{color:#dc3545;margin-top:0}pre{background:#f8f9fa;padding:15px;border-radius:5px;overflow-x:auto}';
+    echo '.log-info{background:#fff3cd;border-left:5px solid #856404;padding:15px;margin-top:20px;border-radius:5px}';
     echo '</style></head><body>';
     echo '<div class="error">';
     echo '<h1>❌ Genel Hata</h1>';
@@ -538,7 +590,32 @@ function dersYenidenAta(dersId, dersAdi) {
     echo '<h3>Stack Trace:</h3>';
     echo '<pre>' . htmlspecialchars($e->getTraceAsString()) . '</pre>';
     echo '</div>';
+
+    echo '<div class="log-info">';
+    echo '<h3>📋 Log Dosyası</h3>';
+    echo '<p>Hata detayları <code>logs/ogrenci-dersler-errors.log</code> dosyasına kaydedildi.</p>';
+    echo '<p><strong>Log konumu:</strong> ' . __DIR__ . '/logs/ogrenci-dersler-errors.log</p>';
+    echo '</div>';
+
     echo '</body></html>';
+    exit;
+} catch(Throwable $t) {
+    // Fatal error - En son çare (parse error, type error vb.)
+    $logFile = __DIR__ . '/logs/ogrenci-dersler-errors.log';
+    $timestamp = date('Y-m-d H:i:s');
+    $message = "[{$timestamp}] !!! FATAL THROWABLE !!! | Message: {$t->getMessage()} | File: {$t->getFile()}:{$t->getLine()}\n";
+    file_put_contents($logFile, $message, FILE_APPEND);
+
+    echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fatal Error</title>';
+    echo '<style>body{font-family:Arial;padding:20px;background:#f5f5f5}';
+    echo '.error{background:#fff;border-left:5px solid #dc3545;padding:20px;border-radius:8px}';
+    echo '</style></head><body>';
+    echo '<div class="error">';
+    echo '<h1>💥 Fatal Error</h1>';
+    echo '<p><strong>Mesaj:</strong> ' . htmlspecialchars($t->getMessage()) . '</p>';
+    echo '<p><strong>Dosya:</strong> ' . $t->getFile() . ':' . $t->getLine() . '</p>';
+    echo '<p>Detaylar: <code>logs/ogrenci-dersler-errors.log</code></p>';
+    echo '</div></body></html>';
     exit;
 }
 
