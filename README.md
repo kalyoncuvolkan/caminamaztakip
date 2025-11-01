@@ -199,4 +199,6 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için `LICENSE` dosy
 Bu projenin geliştirilmesinde emeği geçen herkese teşekkürler.
 
 ---
+
+**📅 Son Güncelleme:** 01 Kasım 2025 - GitHub Actions FTP Deployment Aktif
 **⭐ Projeyi beğendiyseniz yıldız vermeyi unutmayın!**
