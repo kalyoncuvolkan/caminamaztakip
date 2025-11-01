@@ -16,8 +16,18 @@ if(!$ogrenci) {
     exit;
 }
 
-// Dönem bilgileri (şimdilik bu yıl)
-$donem_baslangic = date('Y') . '-01-01';
+// Dönem bilgileri - Bu yıl içinde atanan tüm dersler
+// İlk ders atama tarihini al
+$ilk_atama_query = $pdo->prepare("
+    SELECT MIN(atama_tarihi) as ilk_tarih
+    FROM ogrenci_dersler
+    WHERE ogrenci_id = ? AND YEAR(atama_tarihi) = ?
+");
+$ilk_atama_query->execute([$ogrenci_id, date('Y')]);
+$ilk_atama = $ilk_atama_query->fetchColumn();
+
+// Eğer bu yıl ders yoksa, yılbaşından başla
+$donem_baslangic = $ilk_atama ?? (date('Y') . '-01-01');
 $donem_bitis = date('Y-m-d');
 
 // Ders istatistikleri

@@ -15,8 +15,8 @@ $aylikRapor = $pdo->prepare("
         COALESCE(SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END), 0) as annesi_sayisi,
         COALESCE(SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END), 0) as anne_babasi_sayisi,
         COALESCE(COUNT(n.id), 0) as toplam_namaz,
-        COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_puan,
-        (COALESCE(COUNT(n.id), 0) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0)) as toplam_puan
+        COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_puan,
+        (COALESCE(COUNT(n.id), 0) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0)) as toplam_puan
     FROM
         ogrenciler o
         LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
