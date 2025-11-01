@@ -90,7 +90,18 @@ try {
                 $sql_dump .= "DROP TABLE IF EXISTS `{$table}`;\n";
 
                 $create_table = $pdo->query("SHOW CREATE TABLE `{$table}`")->fetch();
-                $sql_dump .= $create_table['Create Table'] . ";\n\n";
+
+                // VIEW ise 'Create Table', TABLE ise 'Create Table' key'i olur
+                if (isset($create_table['Create Table'])) {
+                    $sql_dump .= $create_table['Create Table'] . ";\n\n";
+                } elseif (isset($create_table['Create View'])) {
+                    // VIEW olarak geldi, atla (sonra ayrı işlenecek)
+                    logBackupError('Skipping VIEW in table loop', ['table' => $table]);
+                    continue;
+                } else {
+                    logBackupError('WARNING: Unknown table type', ['table' => $table, 'keys' => array_keys($create_table)]);
+                    continue;
+                }
 
                 // Tablo verilerini al
                 $row_count = $pdo->query("SELECT COUNT(*) FROM `{$table}`")->fetchColumn();
