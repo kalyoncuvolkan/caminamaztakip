@@ -1,0 +1,56 @@
+<?php
+// ============================================
+// PRODUCTION SUNUCU İÇİN VERİTABANI AYARLARI
+// ============================================
+//
+// Bu dosyayı production sunucunuzda config/db.php olarak kaydedin
+// ve aşağıdaki bilgileri kendi sunucu bilgilerinizle güncelleyin
+//
+
+$host = 'localhost';  // Genellikle 'localhost' olur
+$dbname = 'imammehmet_namazogrenci';  // Production veritabanı adınız
+$username = 'imammehmet_namazogrenci';  // Production MySQL kullanıcı adınız
+$password = 'BURAYA_PRODUCTION_SİFRENİZİ_YAZIN';  // Production MySQL şifreniz
+
+try {
+    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+    $pdo->exec("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_turkish_ci'");
+} catch(PDOException $e) {
+    die("Veritabanı bağlantı hatası: " . $e->getMessage());
+}
+
+function yasHesapla($dogumTarihi) {
+    $bugun = new DateTime();
+    $dogum = new DateTime($dogumTarihi);
+    $yas = $bugun->diff($dogum);
+    return $yas->y;
+}
+
+function turkceTarih($tarih) {
+    $aylar = array(
+        'January' => 'Ocak', 'February' => 'Şubat', 'March' => 'Mart',
+        'April' => 'Nisan', 'May' => 'Mayıs', 'June' => 'Haziran',
+        'July' => 'Temmuz', 'August' => 'Ağustos', 'September' => 'Eylül',
+        'October' => 'Ekim', 'November' => 'Kasım', 'December' => 'Aralık'
+    );
+    return strtr($tarih, $aylar);
+}
+
+function ayAdi($ay) {
+    $aylar = array(
+        1 => 'Ocak', 2 => 'Şubat', 3 => 'Mart', 4 => 'Nisan',
+        5 => 'Mayıs', 6 => 'Haziran', 7 => 'Temmuz', 8 => 'Ağustos',
+        9 => 'Eylül', 10 => 'Ekim', 11 => 'Kasım', 12 => 'Aralık'
+    );
+    return $aylar[$ay];
+}
+
+function siralama($sayi) {
+    if ($sayi == 1) return "Birincisi";
+    if ($sayi == 2) return "İkincisi";
+    if ($sayi == 3) return "Üçüncüsü";
+    return $sayi . ".";
+}
+?>
