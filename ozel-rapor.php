@@ -194,6 +194,148 @@ $sayfa_basligi = 'Özel Rapor - Cami Namaz Takip';
 require_once 'config/header.php';
 ?>
 
+    <style>
+        @media print {
+            /* Sadece rapor tablosunu göster */
+            body * {
+                visibility: hidden;
+            }
+
+            .detayli-rapor, .detayli-rapor * {
+                visibility: visible;
+            }
+
+            .rapor-baslik, .rapor-baslik * {
+                visibility: visible;
+            }
+
+            .ogrenci-bilgi-kutu, .ogrenci-bilgi-kutu * {
+                visibility: visible;
+            }
+
+            .detayli-rapor {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            /* Yazdırma sırasında gizlenecekler */
+            .rapor-filtre,
+            .rapor-ozet,
+            #ilavePuanDetayDiv,
+            .siralama-bilgi,
+            .rapor-butonlar,
+            nav,
+            .btn-print,
+            .btn-geri {
+                display: none !important;
+            }
+
+            /* Sayfa ayarları */
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+
+            body {
+                margin: 0;
+                padding: 0;
+            }
+
+            /* Başlık stil */
+            .rapor-baslik {
+                margin: 20px 0 10px 0 !important;
+                page-break-after: avoid;
+            }
+
+            .rapor-baslik h3 {
+                font-size: 16px !important;
+                margin: 0 !important;
+                text-align: center;
+            }
+
+            .ogrenci-bilgi-kutu {
+                margin: 10px 0 !important;
+                padding: 10px !important;
+                page-break-after: avoid;
+            }
+
+            .ogrenci-bilgi-kutu h3 {
+                font-size: 14px !important;
+                margin: 0 0 5px 0 !important;
+            }
+
+            .ogrenci-bilgi-kutu p {
+                font-size: 11px !important;
+                margin: 0 !important;
+            }
+
+            /* Tablo stil */
+            table {
+                width: 100% !important;
+                font-size: 10px !important;
+                border-collapse: collapse !important;
+                page-break-inside: auto;
+            }
+
+            thead {
+                display: table-header-group;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+
+            th {
+                background: #667eea !important;
+                color: white !important;
+                padding: 6px 4px !important;
+                font-size: 10px !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            td {
+                padding: 5px 3px !important;
+                border: 1px solid #ddd !important;
+                font-size: 9px !important;
+            }
+
+            td strong {
+                font-size: 10px !important;
+            }
+
+            td small {
+                font-size: 7px !important;
+            }
+
+            /* Badge'ler */
+            .vakit-badge {
+                padding: 2px 4px !important;
+                font-size: 7px !important;
+                margin: 1px !important;
+                border: 1px solid #ccc !important;
+            }
+
+            .vakit-badge.aktif {
+                background: #28a745 !important;
+                color: white !important;
+                border-color: #28a745 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            /* Renkler yazdırmada da görünsün */
+            td[style*="background: #e8f5e9"] {
+                background: #e8f5e9 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+
         <div class="ozel-rapor-container">
             <h2>📑 Öğrenci Özel Rapor</h2>
             
@@ -237,7 +379,8 @@ require_once 'config/header.php';
                             <th>Gün / Tarih</th>
                             <th>Namaz Vakitleri</th>
                             <th>Vakit</th>
-                            <th>Bonus Puan</th>
+                            <th>Bonus</th>
+                            <th>Toplam Puan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -276,20 +419,26 @@ require_once 'config/header.php';
 
                                     $parts = [];
                                     if($satir['babasi_sayisi'] > 0) {
-                                        $parts[] = '👨 Babası x' . $satir['babasi_sayisi'];
+                                        $parts[] = '👨 x' . $satir['babasi_sayisi'];
                                     }
                                     if($satir['annesi_sayisi'] > 0) {
-                                        $parts[] = '👩 Annesi x' . $satir['annesi_sayisi'];
+                                        $parts[] = '👩 x' . $satir['annesi_sayisi'];
                                     }
                                     if($satir['anne_babasi_bonus'] > 0) {
-                                        $parts[] = '👨‍👩 İkisi x' . ($satir['anne_babasi_bonus']/2);
+                                        $parts[] = '👨‍👩 x' . ($satir['anne_babasi_bonus']/2);
                                     }
 
-                                    echo implode('<br>', $parts);
+                                    echo implode(' ', $parts);
                                     echo '</small>';
                                 } else {
                                     echo '<span style="color: #999;">-</span>';
                                 }
+                                ?>
+                            </td>
+                            <td style="text-align: center; background: #e8f5e9;">
+                                <?php
+                                $toplam_puan = $satir['toplam'] + $bonus;
+                                echo '<strong style="color: #667eea; font-size: 1.1em;">' . $toplam_puan . '</strong>';
                                 ?>
                             </td>
                         </tr>
