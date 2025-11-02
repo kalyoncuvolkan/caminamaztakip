@@ -64,6 +64,16 @@ if($ay) {
     $ilavePuan = $ilavePuanStmt->fetchColumn();
     $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
 
+    // İlave puan detaylarını çek
+    $ilavePuanDetayStmt = $pdo->prepare("
+        SELECT puan, aciklama, tarih
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        ORDER BY tarih DESC
+    ");
+    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil, $ay]);
+    $ilavePuanDetaylar = $ilavePuanDetayStmt->fetchAll();
+
     // Sıralama hesaplama (aylik_ozetler VIEW ile aynı mantık)
     $siralamaStmt = $pdo->prepare("
         SELECT COUNT(*) + 1 as sira
@@ -129,6 +139,16 @@ if($ay) {
     $ilavePuanStmt->execute([$ogrenci_id, $yil]);
     $ilavePuan = $ilavePuanStmt->fetchColumn();
     $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
+
+    // İlave puan detaylarını çek
+    $ilavePuanDetayStmt = $pdo->prepare("
+        SELECT puan, aciklama, tarih
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND kategori = 'Namaz'
+        ORDER BY tarih DESC
+    ");
+    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil]);
+    $ilavePuanDetaylar = $ilavePuanDetayStmt->fetchAll();
 
     // Sıralama hesaplama (yillik_ozetler VIEW ile aynı mantık)
     $siralamaStmt = $pdo->prepare("
@@ -264,16 +284,55 @@ require_once 'config/header.php';
                         <span class="etiket">Toplam Vakit:</span>
                         <span class="deger"><?php echo $ozetRapor['toplam'] ?? 0; ?></span>
                     </div>
-                    <div class="ozet-kutu" style="background: #d4edda; border: 2px solid #28a745;">
+                    <div class="ozet-kutu" style="background: #d4edda; border: 2px solid #28a745; cursor: pointer;" onclick="toggleIlavePuanDetay()">
                         <span class="etiket">İlave Puan:</span>
                         <span class="deger" style="color: #28a745;">+<?php echo $ilavePuan ?? 0; ?></span>
+                        <?php if(!empty($ilavePuanDetaylar)): ?>
+                        <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
+                            ▼ Detay için tıklayın
+                        </small>
+                        <?php endif; ?>
                     </div>
                     <div class="ozet-kutu toplam" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
                         <span class="etiket">TOPLAM PUAN:</span>
                         <span class="deger" style="font-size: 1.5em;"><?php echo $toplamPuan ?? 0; ?></span>
                     </div>
                 </div>
-                
+
+                <?php if(!empty($ilavePuanDetaylar)): ?>
+                <div id="ilavePuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #28a745;">
+                    <h4 style="margin-top: 0; color: #28a745;">💰 İlave Puan Detayları</h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #28a745; color: white;">
+                                <th style="padding: 10px; text-align: left;">Tarih</th>
+                                <th style="padding: 10px; text-align: left;">Açıklama</th>
+                                <th style="padding: 10px; text-align: center;">Puan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($ilavePuanDetaylar as $detay): ?>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
+                                <td style="padding: 10px;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; color: #28a745;">
+                                    +<?php echo $detay['puan']; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #e8f5e9; font-weight: bold;">
+                                <td colspan="2" style="padding: 10px; text-align: right;">TOPLAM:</td>
+                                <td style="padding: 10px; text-align: center; color: #28a745; font-size: 1.2em;">
+                                    +<?php echo $ilavePuan; ?>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <?php endif; ?>
+
                 <div class="siralama-bilgi">
                     <p class="siralama-metin">
                         <?php 
@@ -297,4 +356,17 @@ require_once 'config/header.php';
             <div class="alert info">Bu dönem için kayıt bulunmamaktadır.</div>
             <?php endif; ?>
         </div>
+
+    <script>
+        function toggleIlavePuanDetay() {
+            const detayDiv = document.getElementById('ilavePuanDetayDiv');
+            if (detayDiv) {
+                if (detayDiv.style.display === 'none') {
+                    detayDiv.style.display = 'block';
+                } else {
+                    detayDiv.style.display = 'none';
+                }
+            }
+        }
+    </script>
 <?php require_once 'config/footer.php'; ?>
