@@ -209,7 +209,8 @@ require_once 'config/header.php';
                 visibility: visible;
             }
 
-            .ogrenci-bilgi-kutu, .ogrenci-bilgi-kutu * {
+            /* İlave puan detay tablosunu göster (eğer açıksa) */
+            #ilavePuanDetayDiv, #ilavePuanDetayDiv * {
                 visibility: visible;
             }
 
@@ -223,12 +224,13 @@ require_once 'config/header.php';
             /* Yazdırma sırasında gizlenecekler */
             .rapor-filtre,
             .rapor-ozet,
-            #ilavePuanDetayDiv,
+            .ogrenci-bilgi-kutu,
             .siralama-bilgi,
             .rapor-butonlar,
             nav,
             .btn-print,
-            .btn-geri {
+            .btn-geri,
+            h2 {
                 display: none !important;
             }
 
@@ -245,7 +247,8 @@ require_once 'config/header.php';
 
             /* Başlık stil */
             .rapor-baslik {
-                margin: 20px 0 10px 0 !important;
+                margin: 0 0 15px 0 !important;
+                padding: 0 !important;
                 page-break-after: avoid;
             }
 
@@ -253,22 +256,47 @@ require_once 'config/header.php';
                 font-size: 16px !important;
                 margin: 0 !important;
                 text-align: center;
+                font-weight: bold;
             }
 
-            .ogrenci-bilgi-kutu {
-                margin: 10px 0 !important;
+            /* İlave Puan Detay Tablosu */
+            #ilavePuanDetayDiv {
+                margin-top: 15px !important;
                 padding: 10px !important;
-                page-break-after: avoid;
+                background: white !important;
+                border: 1px solid #28a745 !important;
+                page-break-inside: avoid;
             }
 
-            .ogrenci-bilgi-kutu h3 {
-                font-size: 14px !important;
-                margin: 0 0 5px 0 !important;
+            #ilavePuanDetayDiv h4 {
+                font-size: 12px !important;
+                margin: 0 0 10px 0 !important;
+                color: #28a745 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
-            .ogrenci-bilgi-kutu p {
-                font-size: 11px !important;
+            #ilavePuanDetayDiv table {
                 margin: 0 !important;
+            }
+
+            #ilavePuanDetayDiv th {
+                background: #28a745 !important;
+                color: white !important;
+                padding: 6px !important;
+                font-size: 9px !important;
+            }
+
+            #ilavePuanDetayDiv td {
+                padding: 5px !important;
+                font-size: 8px !important;
+            }
+
+            #ilavePuanDetayDiv tfoot td {
+                background: #e8f5e9 !important;
+                font-weight: bold !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             /* Tablo stil */
