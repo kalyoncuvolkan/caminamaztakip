@@ -471,24 +471,6 @@ require_once 'config/header.php';
 
                                 if($bonus > 0) {
                                     echo '<span style="color: #28a745; font-weight: bold;">+' . $bonus . '</span>';
-                                    echo '<br><small style="color: #666;">';
-
-                                    $parts = [];
-                                    if($satir['babasi_sayisi'] > 0) {
-                                        $parts[] = '👨 x' . $satir['babasi_sayisi'];
-                                    }
-                                    if($satir['annesi_sayisi'] > 0) {
-                                        $parts[] = '👩 x' . $satir['annesi_sayisi'];
-                                    }
-                                    if($satir['anne_babasi_bonus'] > 0) {
-                                        $parts[] = '👨‍👩 x' . ($satir['anne_babasi_bonus']/2);
-                                    }
-                                    if($yonetim_bonus > 0) {
-                                        $parts[] = '💰 +' . $yonetim_bonus;
-                                    }
-
-                                    echo implode(' ', $parts);
-                                    echo '</small>';
                                 } else {
                                     echo '<span style="color: #999;">-</span>';
                                 }
