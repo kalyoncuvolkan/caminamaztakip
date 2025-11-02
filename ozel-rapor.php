@@ -101,16 +101,17 @@ if($ay) {
     
 } else {
     $raporBaslik = $ogrenci['ad_soyad'] . ' ' . $yil . ' yılı namaz kılma raporu';
-    
+
+    // Tüm namaz kayıtlarını çek (yıllık - gruplamadan)
     $aylikStmt = $pdo->prepare("
-        SELECT 
-            MONTH(tarih) as ay,
-            COUNT(*) as toplam,
-            GROUP_CONCAT(DISTINCT namaz_vakti) as vakitler
-        FROM namaz_kayitlari 
+        SELECT
+            tarih,
+            namaz_vakti,
+            kiminle_geldi,
+            saat
+        FROM namaz_kayitlari
         WHERE ogrenci_id = ? AND YEAR(tarih) = ?
-        GROUP BY MONTH(tarih)
-        ORDER BY MONTH(tarih)
+        ORDER BY tarih DESC, FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
     ");
     $aylikStmt->execute([$ogrenci_id, $yil]);
     $detayliRapor = $aylikStmt->fetchAll();
@@ -221,7 +222,7 @@ require_once 'config/header.php';
                 <table>
                     <thead>
                         <tr>
-                            <th><?php echo $ay ? 'Gün / Tarih' : 'Ay'; ?></th>
+                            <th>Gün / Tarih</th>
                             <th>Namaz Vakti</th>
                             <th>Kiminle Geldi</th>
                             <th>Saat</th>
@@ -232,14 +233,11 @@ require_once 'config/header.php';
                         <tr>
                             <td>
                                 <?php
-                                if($ay) {
-                                    $gun_adi = gunAdi($satir['tarih']);
-                                    $tarih_formatted = date('d.m.Y', strtotime($satir['tarih']));
-                                    echo '<strong>' . $gun_adi . '</strong><br>';
-                                    echo '<small style="color: #666;">' . $tarih_formatted . '</small>';
-                                } else {
-                                    echo ayAdi($satir['ay']) . ' ' . $yil;
-                                }
+                                // Her iki durumda da (aylık ve yıllık) aynı format
+                                $gun_adi = gunAdi($satir['tarih']);
+                                $tarih_formatted = date('d.m.Y', strtotime($satir['tarih']));
+                                echo '<strong>' . $gun_adi . '</strong><br>';
+                                echo '<small style="color: #666;">' . $tarih_formatted . '</small>';
                                 ?>
                             </td>
                             <td>
