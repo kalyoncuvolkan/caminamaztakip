@@ -295,6 +295,13 @@ require_once 'config/header.php';
                 font-size: 10px !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                text-align: center !important;
+            }
+
+            /* İlk iki kolon sola hizalı */
+            th:first-child,
+            th:nth-child(2) {
+                text-align: left !important;
             }
 
             td {
@@ -378,9 +385,9 @@ require_once 'config/header.php';
                         <tr>
                             <th>Gün / Tarih</th>
                             <th>Namaz Vakitleri</th>
-                            <th>Vakit</th>
-                            <th>Bonus</th>
-                            <th>Toplam Puan</th>
+                            <th style="text-align: center;">Vakit</th>
+                            <th style="text-align: center;">Bonus</th>
+                            <th style="text-align: center;">Toplam Puan</th>
                         </tr>
                     </thead>
                     <tbody>
