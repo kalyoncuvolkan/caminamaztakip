@@ -13,11 +13,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         foreach($_POST['ogrenciler'] as $ogrenci_data) {
             $ogrenci_id = $ogrenci_data['id'];
             $kiminle_geldi = $ogrenci_data['kiminle'];
-            
+
             if($kiminle_geldi) {
                 $stmt = $pdo->prepare("INSERT INTO namaz_kayitlari (ogrenci_id, namaz_vakti, kiminle_geldi, tarih) VALUES (?, ?, ?, ?)");
                 if($stmt->execute([$ogrenci_id, $namaz_vakti, $kiminle_geldi, $tarih])) {
                     $basarili++;
+
+                    // Bonus puan ekle (aileleriyle gelenlere)
+                    $bonus_puan = 0;
+                    if($kiminle_geldi == 'Babası' || $kiminle_geldi == 'Annesi') {
+                        $bonus_puan = 1;
+                    } elseif($kiminle_geldi == 'Anne-Babası') {
+                        $bonus_puan = 2;
+                    }
+
+                    if($bonus_puan > 0) {
+                        $bonusStmt = $pdo->prepare("
+                            INSERT INTO ilave_puanlar (ogrenci_id, puan, aciklama, kategori, tarih)
+                            VALUES (?, ?, ?, 'Namaz', ?)
+                        ");
+                        $aciklama = "$kiminle_geldi ile $namaz_vakti namazına geldi (bonus)";
+                        $bonusStmt->execute([$ogrenci_id, $bonus_puan, $aciklama, $tarih]);
+                    }
                 }
             }
         }

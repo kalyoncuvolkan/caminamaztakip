@@ -10,20 +10,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['namaz_kaydet'])) {
     $ogrenci_id = $_POST['ogrenci_id'];
     $namaz_vakti = $_POST['namaz_vakti'];
     $tarih = $_POST['tarih'] ?: $bugun;
-    $kiminle_geldi_secimler = $_POST['kiminle_geldi'] ?? [];
-    
-    if(!empty($kiminle_geldi_secimler)) {
-        foreach($kiminle_geldi_secimler as $kiminle) {
-            $stmt = $pdo->prepare("INSERT INTO namaz_kayitlari (ogrenci_id, namaz_vakti, kiminle_geldi, tarih) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$ogrenci_id, $namaz_vakti, $kiminle, $tarih]);
+    $kiminle_geldi = $_POST['kiminle_geldi'] ?? '';
+
+    if($kiminle_geldi) {
+        // Namaz kaydını ekle
+        $stmt = $pdo->prepare("INSERT INTO namaz_kayitlari (ogrenci_id, namaz_vakti, kiminle_geldi, tarih) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$ogrenci_id, $namaz_vakti, $kiminle_geldi, $tarih]);
+
+        // Bonus puan ekle (aileleriyle gelenlere)
+        $bonus_puan = 0;
+        if($kiminle_geldi == 'Babası' || $kiminle_geldi == 'Annesi') {
+            $bonus_puan = 1;
+        } elseif($kiminle_geldi == 'Anne-Babası') {
+            $bonus_puan = 2;
         }
-        
+
+        if($bonus_puan > 0) {
+            $bonusStmt = $pdo->prepare("
+                INSERT INTO ilave_puanlar (ogrenci_id, puan, aciklama, kategori, tarih)
+                VALUES (?, ?, ?, 'Namaz', ?)
+            ");
+            $aciklama = "$kiminle_geldi ile $namaz_vakti namazına geldi (bonus)";
+            $bonusStmt->execute([$ogrenci_id, $bonus_puan, $aciklama, $tarih]);
+        }
+
         $ogrenci_stmt = $pdo->prepare("SELECT ad_soyad FROM ogrenciler WHERE id = ?");
         $ogrenci_stmt->execute([$ogrenci_id]);
         $ogrenci = $ogrenci_stmt->fetch();
-        
-        $kayit_sayisi = count($kiminle_geldi_secimler);
-        $mesaj = $ogrenci['ad_soyad'] . " için $namaz_vakti namazı ($kayit_sayisi kayıt) başarıyla eklendi!";
+
+        $puan_mesaji = $bonus_puan > 0 ? " (+{$bonus_puan} bonus puan)" : "";
+        $mesaj = $ogrenci['ad_soyad'] . " için $namaz_vakti namazı başarıyla eklendi!{$puan_mesaji}";
     }
 }
 
@@ -163,7 +179,7 @@ require_once 'config/header.php';
             border-color: #667eea;
         }
         
-        .kiminle-secenegi input[type="checkbox"] {
+        .kiminle-secenegi input[type="radio"] {
             display: none;
         }
         
@@ -295,40 +311,44 @@ require_once 'config/header.php';
                     
                     <div class="kiminle-secenekleri">
                         <label class="kiminle-secenegi" for="kendisi">
-                            <input type="checkbox" id="kendisi" name="kiminle_geldi[]" value="Kendisi" checked>
+                            <input type="radio" id="kendisi" name="kiminle_geldi" value="Kendisi" checked>
                             <div>
                                 <h4>🧒 Kendisi</h4>
-                                <p>Öğrenci tek başına geldi</p>
+                                <p>Tek başına geldi</p>
+                                <small style="color: #666;">+0 bonus puan</small>
                             </div>
                         </label>
-                        
+
                         <label class="kiminle-secenegi" for="babasi">
-                            <input type="checkbox" id="babasi" name="kiminle_geldi[]" value="Babası">
+                            <input type="radio" id="babasi" name="kiminle_geldi" value="Babası">
                             <div>
                                 <h4>👨 Babası</h4>
                                 <p>Babası ile birlikte geldi</p>
+                                <small style="color: #28a745;">+1 bonus puan</small>
                             </div>
                         </label>
-                        
+
                         <label class="kiminle-secenegi" for="annesi">
-                            <input type="checkbox" id="annesi" name="kiminle_geldi[]" value="Annesi">
+                            <input type="radio" id="annesi" name="kiminle_geldi" value="Annesi">
                             <div>
                                 <h4>👩 Annesi</h4>
                                 <p>Annesi ile birlikte geldi</p>
+                                <small style="color: #28a745;">+1 bonus puan</small>
                             </div>
                         </label>
-                        
+
                         <label class="kiminle-secenegi" for="anne_babasi">
-                            <input type="checkbox" id="anne_babasi" name="kiminle_geldi[]" value="Anne-Babası">
+                            <input type="radio" id="anne_babasi" name="kiminle_geldi" value="Anne-Babası">
                             <div>
                                 <h4>👨‍👩 Anne-Babası</h4>
                                 <p>Anne ve babası ile geldi</p>
+                                <small style="color: #28a745;">+2 bonus puan</small>
                             </div>
                         </label>
                     </div>
-                    
+
                     <div class="alert info" id="puanBilgisi">
-                        <strong>💡 Puanlama:</strong> Her seçim için ayrı kayıt oluşturulacak ve öğrenci o kadar puan alacak.
+                        <strong>💡 Puanlama:</strong> 1 vakit namaz + bonus puan (ailesi ile geldiyse)
                     </div>
                     
                     <div class="wizard-navigation">
@@ -467,29 +487,42 @@ require_once 'config/header.php';
             `;
         }
         
-        // Kiminle geldi seçimleri
-        document.querySelectorAll('input[name="kiminle_geldi[]"]').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const label = this.closest('.kiminle-secenegi');
-                if(this.checked) {
-                    label.classList.add('secili');
-                } else {
+        // Kiminle geldi seçimleri (radio button)
+        document.querySelectorAll('input[name="kiminle_geldi"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                // Tüm label'lardan secili class'ını kaldır
+                document.querySelectorAll('.kiminle-secenegi').forEach(label => {
                     label.classList.remove('secili');
+                });
+
+                // Seçili olana ekle
+                if(this.checked) {
+                    this.closest('.kiminle-secenegi').classList.add('secili');
                 }
-                
+
                 updatePuanBilgisi();
             });
         });
-        
+
         function updatePuanBilgisi() {
-            const checkedBoxes = document.querySelectorAll('input[name="kiminle_geldi[]"]:checked');
-            const sayisi = checkedBoxes.length;
-            
+            const selectedRadio = document.querySelector('input[name="kiminle_geldi"]:checked');
+            if(!selectedRadio) return;
+
+            let bonusPuan = 0;
+            const kiminle = selectedRadio.value;
+
+            if(kiminle === 'Babası' || kiminle === 'Annesi') {
+                bonusPuan = 1;
+            } else if(kiminle === 'Anne-Babası') {
+                bonusPuan = 2;
+            }
+
+            const toplamPuan = 1 + bonusPuan;
             document.getElementById('puanBilgisi').innerHTML = `
-                <strong>💡 Puanlama:</strong> ${sayisi} ayrı kayıt oluşturulacak ve öğrenci ${sayisi} puan alacak.
+                <strong>💡 Puanlama:</strong> 1 vakit namaz${bonusPuan > 0 ? ' + ' + bonusPuan + ' bonus' : ''} = ${toplamPuan} toplam puan
             `;
         }
-        
+
         // İlk yüklemede kendisi seçili olsun
         document.getElementById('kendisi').closest('.kiminle-secenegi').classList.add('secili');
         
