@@ -45,4 +45,18 @@ function siralama($sayi) {
     if ($sayi == 3) return "Üçüncüsü";
     return $sayi . ".";
 }
+
+function gunAdi($tarih) {
+    $gunlar = array(
+        'Monday' => 'Pazartesi',
+        'Tuesday' => 'Salı',
+        'Wednesday' => 'Çarşamba',
+        'Thursday' => 'Perşembe',
+        'Friday' => 'Cuma',
+        'Saturday' => 'Cumartesi',
+        'Sunday' => 'Pazar'
+    );
+    $gun = date('l', strtotime($tarih));
+    return $gunlar[$gun] ?? $gun;
+}
 ?>

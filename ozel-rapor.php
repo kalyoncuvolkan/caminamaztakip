@@ -223,7 +223,7 @@ require_once 'config/header.php';
                 <table>
                     <thead>
                         <tr>
-                            <th><?php echo $ay ? 'Gün' : 'Ay'; ?></th>
+                            <th><?php echo $ay ? 'Gün / Tarih' : 'Ay'; ?></th>
                             <th>Namaz Vakitleri</th>
                             <th>Toplam</th>
                         </tr>
@@ -232,10 +232,15 @@ require_once 'config/header.php';
                         <?php foreach($detayliRapor as $satir): ?>
                         <tr>
                             <td>
-                                <?php 
+                                <?php
                                 if($ay) {
-                                    echo str_pad($satir['gun'], 2, '0', STR_PAD_LEFT) . '.' . 
-                                         str_pad($ay, 2, '0', STR_PAD_LEFT) . '.' . $yil;
+                                    $tarih = $yil . '-' . str_pad($ay, 2, '0', STR_PAD_LEFT) . '-' . str_pad($satir['gun'], 2, '0', STR_PAD_LEFT);
+                                    $gun_adi = gunAdi($tarih);
+                                    echo '<strong>' . $gun_adi . '</strong><br>';
+                                    echo '<small style="color: #666;">' .
+                                         str_pad($satir['gun'], 2, '0', STR_PAD_LEFT) . '.' .
+                                         str_pad($ay, 2, '0', STR_PAD_LEFT) . '.' . $yil .
+                                         '</small>';
                                 } else {
                                     echo ayAdi($satir['ay']) . ' ' . $yil;
                                 }
