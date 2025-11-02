@@ -25,16 +25,18 @@ $siralama = 0;
 if($ay) {
     $raporBaslik = $ogrenci['ad_soyad'] . ' ' . $yil . ' ' . ayAdi($ay) . ' ayı namaz kılma raporu';
     
-    // Tüm namaz kayıtlarını çek (gruplamadan)
+    // Günlük gruplu namaz kayıtları
     $gunlukStmt = $pdo->prepare("
         SELECT
             tarih,
-            namaz_vakti,
-            kiminle_geldi,
-            saat
+            GROUP_CONCAT(namaz_vakti ORDER BY
+                FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
+            ) as vakitler,
+            COUNT(*) as toplam
         FROM namaz_kayitlari
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
-        ORDER BY tarih DESC, FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
+        GROUP BY tarih
+        ORDER BY tarih DESC
     ");
     $gunlukStmt->execute([$ogrenci_id, $yil, $ay]);
     $detayliRapor = $gunlukStmt->fetchAll();
@@ -102,16 +104,18 @@ if($ay) {
 } else {
     $raporBaslik = $ogrenci['ad_soyad'] . ' ' . $yil . ' yılı namaz kılma raporu';
 
-    // Tüm namaz kayıtlarını çek (yıllık - gruplamadan)
+    // Günlük gruplu namaz kayıtları (yıllık)
     $aylikStmt = $pdo->prepare("
         SELECT
             tarih,
-            namaz_vakti,
-            kiminle_geldi,
-            saat
+            GROUP_CONCAT(namaz_vakti ORDER BY
+                FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
+            ) as vakitler,
+            COUNT(*) as toplam
         FROM namaz_kayitlari
         WHERE ogrenci_id = ? AND YEAR(tarih) = ?
-        ORDER BY tarih DESC, FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
+        GROUP BY tarih
+        ORDER BY tarih DESC
     ");
     $aylikStmt->execute([$ogrenci_id, $yil]);
     $detayliRapor = $aylikStmt->fetchAll();
@@ -223,9 +227,8 @@ require_once 'config/header.php';
                     <thead>
                         <tr>
                             <th>Gün / Tarih</th>
-                            <th>Namaz Vakti</th>
-                            <th>Kiminle Geldi</th>
-                            <th>Saat</th>
+                            <th>Namaz Vakitleri</th>
+                            <th>Toplam</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -233,7 +236,6 @@ require_once 'config/header.php';
                         <tr>
                             <td>
                                 <?php
-                                // Her iki durumda da (aylık ve yıllık) aynı format
                                 $gun_adi = gunAdi($satir['tarih']);
                                 $tarih_formatted = date('d.m.Y', strtotime($satir['tarih']));
                                 echo '<strong>' . $gun_adi . '</strong><br>';
@@ -241,37 +243,19 @@ require_once 'config/header.php';
                                 ?>
                             </td>
                             <td>
-                                <span class="vakit-badge aktif"><?php echo $satir['namaz_vakti']; ?></span>
-                            </td>
-                            <td>
                                 <?php
-                                $kiminle = $satir['kiminle_geldi'];
-                                $icon = '';
-                                $color = '';
-                                switch($kiminle) {
-                                    case 'Kendisi':
-                                        $icon = '🧒';
-                                        $color = '#666';
-                                        break;
-                                    case 'Babası':
-                                        $icon = '👨';
-                                        $color = '#28a745';
-                                        break;
-                                    case 'Annesi':
-                                        $icon = '👩';
-                                        $color = '#28a745';
-                                        break;
-                                    case 'Anne-Babası':
-                                        $icon = '👨‍👩';
-                                        $color = '#28a745';
-                                        break;
+                                $vakitler = ['Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı'];
+                                $gelenVakitler = explode(',', $satir['vakitler']);
+                                foreach($vakitler as $vakit) {
+                                    if(in_array($vakit, $gelenVakitler)) {
+                                        echo '<span class="vakit-badge aktif">' . $vakit . '</span> ';
+                                    } else {
+                                        echo '<span class="vakit-badge">' . $vakit . '</span> ';
+                                    }
                                 }
-                                echo '<span style="color: ' . $color . '; font-weight: 600;">' . $icon . ' ' . $kiminle . '</span>';
                                 ?>
                             </td>
-                            <td>
-                                <small style="color: #666;"><?php echo date('H:i', strtotime($satir['saat'])); ?></small>
-                            </td>
+                            <td><strong><?php echo $satir['toplam']; ?></strong></td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
