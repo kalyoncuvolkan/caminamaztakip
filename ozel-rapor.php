@@ -54,20 +54,42 @@ if($ay) {
     $ozetStmt->execute([$ogrenci_id, $yil, $ay]);
     $ozetRapor = $ozetStmt->fetch();
     
-    $siralamaStmt = $pdo->prepare("
-        SELECT COUNT(DISTINCT o.id) + 1 as sira, 
-               (SELECT COUNT(DISTINCT ogrenci_id) FROM namaz_kayitlari 
-                WHERE YEAR(tarih) = ? AND MONTH(tarih) = ?) as toplam_ogrenci
-        FROM ogrenciler o
-        LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id 
-            AND YEAR(n.tarih) = ? AND MONTH(n.tarih) = ?
-        GROUP BY o.id
-        HAVING COUNT(n.id) > ?
+    // Öğrencinin toplam puanını hesapla (namaz + ilave puan)
+    $ilavePuanStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(puan), 0) as ilave_puan
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
     ");
-    $siralamaStmt->execute([$yil, $ay, $yil, $ay, $ozetRapor['toplam'] ?? 0]);
-    $siralamaData = $siralamaStmt->fetch();
-    $siralama = $siralamaData['sira'] ?? 1;
-    $toplamOgrenci = $siralamaData['toplam_ogrenci'] ?? 0;
+    $ilavePuanStmt->execute([$ogrenci_id, $yil, $ay]);
+    $ilavePuan = $ilavePuanStmt->fetchColumn();
+    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
+
+    // Sıralama hesaplama (aylik_ozetler VIEW ile aynı mantık)
+    $siralamaStmt = $pdo->prepare("
+        SELECT COUNT(*) + 1 as sira
+        FROM (
+            SELECT
+                o.id,
+                COUNT(n.id) as toplam_namaz,
+                (COUNT(n.id) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar
+                    WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'), 0)) as toplam_puan
+            FROM ogrenciler o
+            LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
+                AND YEAR(n.tarih) = ? AND MONTH(n.tarih) = ?
+            GROUP BY o.id
+        ) as temp
+        WHERE toplam_puan > ? OR (toplam_puan = ? AND toplam_namaz > ?)
+    ");
+    $siralamaStmt->execute([$yil, $ay, $yil, $ay, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
+    $siralama = $siralamaStmt->fetchColumn();
+
+    // Toplam öğrenci sayısı
+    $toplamOgrenciStmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT ogrenci_id) FROM namaz_kayitlari
+        WHERE YEAR(tarih) = ? AND MONTH(tarih) = ?
+    ");
+    $toplamOgrenciStmt->execute([$yil, $ay]);
+    $toplamOgrenci = $toplamOgrenciStmt->fetchColumn();
     
 } else {
     $raporBaslik = $ogrenci['ad_soyad'] . ' ' . $yil . ' yılı namaz kılma raporu';
@@ -98,18 +120,40 @@ if($ay) {
     $ozetStmt->execute([$ogrenci_id, $yil]);
     $ozetRapor = $ozetStmt->fetch();
     
-    $siralamaStmt = $pdo->prepare("
-        SELECT COUNT(DISTINCT o.id) + 1 as sira,
-               (SELECT COUNT(DISTINCT ogrenci_id) FROM namaz_kayitlari WHERE YEAR(tarih) = ?) as toplam_ogrenci
-        FROM ogrenciler o
-        LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id AND YEAR(n.tarih) = ?
-        GROUP BY o.id
-        HAVING COUNT(n.id) > ?
+    // Öğrencinin toplam puanını hesapla (namaz + ilave puan)
+    $ilavePuanStmt = $pdo->prepare("
+        SELECT COALESCE(SUM(puan), 0) as ilave_puan
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND kategori = 'Namaz'
     ");
-    $siralamaStmt->execute([$yil, $yil, $ozetRapor['toplam'] ?? 0]);
-    $siralamaData = $siralamaStmt->fetch();
-    $siralama = $siralamaData['sira'] ?? 1;
-    $toplamOgrenci = $siralamaData['toplam_ogrenci'] ?? 0;
+    $ilavePuanStmt->execute([$ogrenci_id, $yil]);
+    $ilavePuan = $ilavePuanStmt->fetchColumn();
+    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
+
+    // Sıralama hesaplama (yillik_ozetler VIEW ile aynı mantık)
+    $siralamaStmt = $pdo->prepare("
+        SELECT COUNT(*) + 1 as sira
+        FROM (
+            SELECT
+                o.id,
+                COUNT(n.id) as toplam_namaz,
+                (COUNT(n.id) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar
+                    WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND kategori = 'Namaz'), 0)) as toplam_puan
+            FROM ogrenciler o
+            LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id AND YEAR(n.tarih) = ?
+            GROUP BY o.id
+        ) as temp
+        WHERE toplam_puan > ? OR (toplam_puan = ? AND toplam_namaz > ?)
+    ");
+    $siralamaStmt->execute([$yil, $yil, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
+    $siralama = $siralamaStmt->fetchColumn();
+
+    // Toplam öğrenci sayısı
+    $toplamOgrenciStmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT ogrenci_id) FROM namaz_kayitlari WHERE YEAR(tarih) = ?
+    ");
+    $toplamOgrenciStmt->execute([$yil]);
+    $toplamOgrenci = $toplamOgrenciStmt->fetchColumn();
 }
 
 $yillar = $pdo->query("SELECT DISTINCT YEAR(tarih) as yil FROM namaz_kayitlari ORDER BY yil DESC")->fetchAll();
