@@ -28,21 +28,23 @@ if($ay) {
     // Günlük gruplu namaz kayıtları
     $gunlukStmt = $pdo->prepare("
         SELECT
-            tarih,
-            GROUP_CONCAT(namaz_vakti ORDER BY
-                FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
+            n.tarih,
+            GROUP_CONCAT(n.namaz_vakti ORDER BY
+                FIELD(n.namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
             ) as vakitler,
-            COUNT(*) as toplam,
-            GROUP_CONCAT(DISTINCT kiminle_geldi) as kiminle_list,
-            SUM(CASE WHEN kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
-            SUM(CASE WHEN kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
-            SUM(CASE WHEN kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus
-        FROM namaz_kayitlari
-        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
-        GROUP BY tarih
-        ORDER BY tarih DESC
+            COUNT(n.id) as toplam,
+            GROUP_CONCAT(DISTINCT n.kiminle_geldi) as kiminle_list,
+            SUM(CASE WHEN n.kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
+            SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
+            SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus,
+            COALESCE((SELECT SUM(puan) FROM ilave_puanlar
+                WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'), 0) as gunluk_ilave_puan
+        FROM namaz_kayitlari n
+        WHERE n.ogrenci_id = ? AND YEAR(n.tarih) = ? AND MONTH(n.tarih) = ?
+        GROUP BY n.tarih
+        ORDER BY n.tarih DESC
     ");
-    $gunlukStmt->execute([$ogrenci_id, $yil, $ay]);
+    $gunlukStmt->execute([$ogrenci_id, $ogrenci_id, $yil, $ay]);
     $detayliRapor = $gunlukStmt->fetchAll();
     
     $ozetStmt = $pdo->prepare("
@@ -111,21 +113,23 @@ if($ay) {
     // Günlük gruplu namaz kayıtları (yıllık)
     $aylikStmt = $pdo->prepare("
         SELECT
-            tarih,
-            GROUP_CONCAT(namaz_vakti ORDER BY
-                FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
+            n.tarih,
+            GROUP_CONCAT(n.namaz_vakti ORDER BY
+                FIELD(n.namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
             ) as vakitler,
-            COUNT(*) as toplam,
-            GROUP_CONCAT(DISTINCT kiminle_geldi) as kiminle_list,
-            SUM(CASE WHEN kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
-            SUM(CASE WHEN kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
-            SUM(CASE WHEN kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus
-        FROM namaz_kayitlari
-        WHERE ogrenci_id = ? AND YEAR(tarih) = ?
-        GROUP BY tarih
-        ORDER BY tarih DESC
+            COUNT(n.id) as toplam,
+            GROUP_CONCAT(DISTINCT n.kiminle_geldi) as kiminle_list,
+            SUM(CASE WHEN n.kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
+            SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
+            SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus,
+            COALESCE((SELECT SUM(puan) FROM ilave_puanlar
+                WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'), 0) as gunluk_ilave_puan
+        FROM namaz_kayitlari n
+        WHERE n.ogrenci_id = ? AND YEAR(n.tarih) = ?
+        GROUP BY n.tarih
+        ORDER BY n.tarih DESC
     ");
-    $aylikStmt->execute([$ogrenci_id, $yil]);
+    $aylikStmt->execute([$ogrenci_id, $ogrenci_id, $yil]);
     $detayliRapor = $aylikStmt->fetchAll();
     
     $ozetStmt = $pdo->prepare("
@@ -201,24 +205,39 @@ require_once 'config/header.php';
                 visibility: hidden;
             }
 
-            .detayli-rapor, .detayli-rapor * {
-                visibility: visible;
-            }
-
             .rapor-baslik, .rapor-baslik * {
                 visibility: visible;
             }
 
-            /* İlave puan detay tablosunu göster (eğer açıksa) */
-            #ilavePuanDetayDiv, #ilavePuanDetayDiv * {
+            .detayli-rapor, .detayli-rapor * {
                 visibility: visible;
             }
 
-            .detayli-rapor {
+            /* İlave puan detay tablosunu göster */
+            #ilavePuanDetayDiv, #ilavePuanDetayDiv * {
+                visibility: visible !important;
+            }
+
+            /* Başlık en üstte */
+            .rapor-baslik {
                 position: absolute;
                 left: 0;
                 top: 0;
                 width: 100%;
+            }
+
+            /* Tablo başlığın altında */
+            .detayli-rapor {
+                position: absolute;
+                left: 0;
+                top: 50px;
+                width: 100%;
+            }
+
+            /* İlave puan detay tablosu en altta */
+            #ilavePuanDetayDiv {
+                position: relative;
+                margin-top: 15px !important;
             }
 
             /* Yazdırma sırasında gizlenecekler */
@@ -445,8 +464,10 @@ require_once 'config/header.php';
                             <td style="text-align: center;"><strong><?php echo $satir['toplam']; ?></strong></td>
                             <td style="text-align: center;">
                                 <?php
-                                // Bonus puan hesapla
-                                $bonus = $satir['babasi_sayisi'] + $satir['annesi_sayisi'] + $satir['anne_babasi_bonus'];
+                                // Bonus puan hesapla (namaz ile gelen + puan yönetiminden eklenen)
+                                $namaz_bonus = $satir['babasi_sayisi'] + $satir['annesi_sayisi'] + $satir['anne_babasi_bonus'];
+                                $yonetim_bonus = $satir['gunluk_ilave_puan'] ?? 0;
+                                $bonus = $namaz_bonus + $yonetim_bonus;
 
                                 if($bonus > 0) {
                                     echo '<span style="color: #28a745; font-weight: bold;">+' . $bonus . '</span>';
@@ -461,6 +482,9 @@ require_once 'config/header.php';
                                     }
                                     if($satir['anne_babasi_bonus'] > 0) {
                                         $parts[] = '👨‍👩 x' . ($satir['anne_babasi_bonus']/2);
+                                    }
+                                    if($yonetim_bonus > 0) {
+                                        $parts[] = '💰 +' . $yonetim_bonus;
                                     }
 
                                     echo implode(' ', $parts);
@@ -589,5 +613,22 @@ require_once 'config/header.php';
                 }
             }
         }
+
+        // Yazdırma öncesi ilave puan detayını göster
+        window.addEventListener('beforeprint', function() {
+            const detayDiv = document.getElementById('ilavePuanDetayDiv');
+            if (detayDiv) {
+                detayDiv.setAttribute('data-was-hidden', detayDiv.style.display === 'none' ? 'true' : 'false');
+                detayDiv.style.display = 'block';
+            }
+        });
+
+        // Yazdırma sonrası önceki duruma döndür
+        window.addEventListener('afterprint', function() {
+            const detayDiv = document.getElementById('ilavePuanDetayDiv');
+            if (detayDiv && detayDiv.getAttribute('data-was-hidden') === 'true') {
+                detayDiv.style.display = 'none';
+            }
+        });
     </script>
 <?php require_once 'config/footer.php'; ?>
