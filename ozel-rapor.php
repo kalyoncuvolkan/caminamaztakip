@@ -32,7 +32,11 @@ if($ay) {
             GROUP_CONCAT(namaz_vakti ORDER BY
                 FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
             ) as vakitler,
-            COUNT(*) as toplam
+            COUNT(*) as toplam,
+            GROUP_CONCAT(DISTINCT kiminle_geldi) as kiminle_list,
+            SUM(CASE WHEN kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
+            SUM(CASE WHEN kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
+            SUM(CASE WHEN kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus
         FROM namaz_kayitlari
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
         GROUP BY tarih
@@ -111,7 +115,11 @@ if($ay) {
             GROUP_CONCAT(namaz_vakti ORDER BY
                 FIELD(namaz_vakti, 'Sabah', 'Öğlen', 'İkindi', 'Akşam', 'Yatsı')
             ) as vakitler,
-            COUNT(*) as toplam
+            COUNT(*) as toplam,
+            GROUP_CONCAT(DISTINCT kiminle_geldi) as kiminle_list,
+            SUM(CASE WHEN kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
+            SUM(CASE WHEN kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
+            SUM(CASE WHEN kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus
         FROM namaz_kayitlari
         WHERE ogrenci_id = ? AND YEAR(tarih) = ?
         GROUP BY tarih
@@ -228,7 +236,8 @@ require_once 'config/header.php';
                         <tr>
                             <th>Gün / Tarih</th>
                             <th>Namaz Vakitleri</th>
-                            <th>Toplam</th>
+                            <th>Vakit</th>
+                            <th>Bonus Puan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -255,7 +264,34 @@ require_once 'config/header.php';
                                 }
                                 ?>
                             </td>
-                            <td><strong><?php echo $satir['toplam']; ?></strong></td>
+                            <td style="text-align: center;"><strong><?php echo $satir['toplam']; ?></strong></td>
+                            <td style="text-align: center;">
+                                <?php
+                                // Bonus puan hesapla
+                                $bonus = $satir['babasi_sayisi'] + $satir['annesi_sayisi'] + $satir['anne_babasi_bonus'];
+
+                                if($bonus > 0) {
+                                    echo '<span style="color: #28a745; font-weight: bold;">+' . $bonus . '</span>';
+                                    echo '<br><small style="color: #666;">';
+
+                                    $parts = [];
+                                    if($satir['babasi_sayisi'] > 0) {
+                                        $parts[] = '👨 Babası x' . $satir['babasi_sayisi'];
+                                    }
+                                    if($satir['annesi_sayisi'] > 0) {
+                                        $parts[] = '👩 Annesi x' . $satir['annesi_sayisi'];
+                                    }
+                                    if($satir['anne_babasi_bonus'] > 0) {
+                                        $parts[] = '👨‍👩 İkisi x' . ($satir['anne_babasi_bonus']/2);
+                                    }
+
+                                    echo implode('<br>', $parts);
+                                    echo '</small>';
+                                } else {
+                                    echo '<span style="color: #999;">-</span>';
+                                }
+                                ?>
+                            </td>
                         </tr>
                         <?php endforeach; ?>
                     </tbody>
