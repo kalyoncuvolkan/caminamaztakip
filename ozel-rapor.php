@@ -260,9 +260,17 @@ require_once 'config/header.php';
                         <span class="etiket">Anne-Babası:</span>
                         <span class="deger"><?php echo $ozetRapor['anne_babasi'] ?? 0; ?></span>
                     </div>
-                    <div class="ozet-kutu toplam">
-                        <span class="etiket">TOPLAM:</span>
+                    <div class="ozet-kutu" style="background: #fff3cd; border: 2px solid #ffc107;">
+                        <span class="etiket">Toplam Vakit:</span>
                         <span class="deger"><?php echo $ozetRapor['toplam'] ?? 0; ?></span>
+                    </div>
+                    <div class="ozet-kutu" style="background: #d4edda; border: 2px solid #28a745;">
+                        <span class="etiket">İlave Puan:</span>
+                        <span class="deger" style="color: #28a745;">+<?php echo $ilavePuan ?? 0; ?></span>
+                    </div>
+                    <div class="ozet-kutu toplam" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                        <span class="etiket">TOPLAM PUAN:</span>
+                        <span class="deger" style="font-size: 1.5em;"><?php echo $toplamPuan ?? 0; ?></span>
                     </div>
                 </div>
                 
