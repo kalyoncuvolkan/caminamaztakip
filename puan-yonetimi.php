@@ -8,8 +8,23 @@ $mesaj = '';
 
 // Öğrenci seçilmemişse, öğrenci listesini göster
 if(!$ogrenci_id) {
+    // Arama parametresi
+    $arama = $_GET['arama'] ?? '';
+
     // Öğrenci listesi
-    $ogrenciler = $pdo->query("SELECT * FROM ogrenciler WHERE aktif = 1 ORDER BY ad_soyad")->fetchAll();
+    $sql = "SELECT * FROM ogrenciler WHERE aktif = 1";
+    $params = [];
+
+    if($arama) {
+        $sql .= " AND ad_soyad LIKE ?";
+        $params[] = "%$arama%";
+    }
+
+    $sql .= " ORDER BY ad_soyad";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $ogrenciler = $stmt->fetchAll();
 
     $aktif_sayfa = 'puan';
     $sayfa_basligi = 'Puan Yönetimi - Öğrenci Seçin';
@@ -19,6 +34,23 @@ if(!$ogrenci_id) {
         <h2>⭐ Puan Yönetimi - Öğrenci Seçin</h2>
         <p style="color: #666; margin-bottom: 20px;">İlave puan eklemek veya puan silmek için bir öğrenci seçin:</p>
 
+        <!-- Arama Formu -->
+        <form method="GET" action="" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <input type="text" name="arama" placeholder="🔍 Öğrenci ara..." value="<?php echo htmlspecialchars($arama); ?>"
+                       style="flex: 1; padding: 10px; border: 2px solid #ddd; border-radius: 5px; font-size: 16px;">
+                <button type="submit" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 600;">
+                    Ara
+                </button>
+                <?php if($arama): ?>
+                <a href="puan-yonetimi.php" style="padding: 10px 20px; background: #6c757d; color: white; text-decoration: none; border-radius: 5px; font-weight: 600;">
+                    Temizle
+                </a>
+                <?php endif; ?>
+            </div>
+        </form>
+
+        <?php if(count($ogrenciler) > 0): ?>
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px;">
             <?php foreach($ogrenciler as $ogr): ?>
             <a href="puan-yonetimi.php?id=<?php echo $ogr['id']; ?>" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; text-decoration: none; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.3s;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2)';">
@@ -28,6 +60,11 @@ if(!$ogrenci_id) {
             </a>
             <?php endforeach; ?>
         </div>
+        <?php else: ?>
+        <div style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 5px;">
+            <strong>⚠️ Sonuç bulunamadı!</strong> "<?php echo htmlspecialchars($arama); ?>" araması için öğrenci bulunamadı.
+        </div>
+        <?php endif; ?>
     </div>
     <?php
     require_once 'config/footer.php';
@@ -295,23 +332,35 @@ require_once 'config/header.php';
         }
 
         function ilavePuanSil(ilavePuanId) {
-            const nedeni = prompt('❓ İlave puan silme nedeni (opsiyonel):');
-            if(nedeni !== null) {
-                fetch('api/ilave-puan-sil.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'ilave_puan_id=' + ilavePuanId + '&nedeni=' + encodeURIComponent(nedeni)
-                })
-                .then(r => r.json())
-                .then(d => {
-                    if(d.success) {
-                        alert('✅ İlave puan silindi ve geçmişe kaydedildi');
-                        location.reload();
-                    } else {
-                        alert('❌ Hata: ' + d.message);
-                    }
-                });
+            const nedeni = prompt('❓ İlave puan silme nedeni:\n\n(Bu alan zorunludur)');
+
+            if(nedeni === null) {
+                return; // İptal edildi
             }
+
+            if(nedeni.trim() === '') {
+                alert('❌ Silme nedeni boş bırakılamaz!');
+                return;
+            }
+
+            if(!confirm('⚠️ Bu ilave puanı silmek istediğinize emin misiniz?\n\nSilme nedeni: ' + nedeni)) {
+                return;
+            }
+
+            fetch('api/ilave-puan-sil.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'ilave_puan_id=' + ilavePuanId + '&nedeni=' + encodeURIComponent(nedeni)
+            })
+            .then(r => r.json())
+            .then(d => {
+                if(d.success) {
+                    alert('✅ İlave puan silindi ve geçmişe kaydedildi');
+                    location.reload();
+                } else {
+                    alert('❌ Hata: ' + d.message);
+                }
+            });
         }
     </script>
 <?php require_once 'config/footer.php'; ?>

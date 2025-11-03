@@ -71,14 +71,18 @@ if($ay) {
     $ilavePuan = $ilavePuanStmt->fetchColumn();
     $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
 
-    // İlave puan detaylarını çek
+    // İlave puan detaylarını çek (hem eklenmiş hem silinmiş puanlar)
     $ilavePuanDetayStmt = $pdo->prepare("
-        SELECT puan, aciklama, tarih
+        SELECT puan, aciklama, tarih, 'eklendi' as durum
         FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        UNION ALL
+        SELECT -puan as puan, CONCAT(aciklama, ' (Silindi: ', silme_nedeni, ')') as aciklama, tarih, 'silindi' as durum
+        FROM ilave_puan_silme_gecmisi
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
         ORDER BY tarih DESC
     ");
-    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil, $ay]);
+    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
     $ilavePuanDetaylar = $ilavePuanDetayStmt->fetchAll();
 
     // Sıralama hesaplama (aylik_ozetler VIEW ile aynı mantık)
@@ -577,11 +581,11 @@ require_once 'config/header.php';
                         </thead>
                         <tbody>
                             <?php foreach($ilavePuanDetaylar as $detay): ?>
-                            <tr style="border-bottom: 1px solid #ddd;">
+                            <tr style="border-bottom: 1px solid #ddd;<?php if($detay['puan'] < 0) echo ' background: #fff3cd;'; ?>">
                                 <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
                                 <td style="padding: 10px;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
-                                <td style="padding: 10px; text-align: center; font-weight: bold; color: #28a745;">
-                                    +<?php echo $detay['puan']; ?>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; color: <?php echo $detay['puan'] < 0 ? '#dc3545' : '#28a745'; ?>;">
+                                    <?php echo $detay['puan'] > 0 ? '+' : ''; ?><?php echo $detay['puan']; ?>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

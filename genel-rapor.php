@@ -37,7 +37,7 @@ foreach($raporlar as $rapor) {
 
 $yillar = $pdo->query("SELECT DISTINCT YEAR(tarih) as yil FROM namaz_kayitlari ORDER BY yil DESC")->fetchAll();
 
-// İlk 3 öğrenci için ilave puan detaylarını çek
+// İlk 3 öğrenci için ilave puan detaylarını çek (hem eklenen hem silinen)
 $ilavePuanDetaylari = [];
 for($i = 0; $i < min(3, count($raporlar)); $i++) {
     $detayStmt = $pdo->prepare("
@@ -45,10 +45,14 @@ for($i = 0; $i < min(3, count($raporlar)); $i++) {
         FROM ilave_puanlar
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
         AND aciklama NOT LIKE '%(bonus)%'
-        ORDER BY tarih DESC
+        UNION ALL
+        SELECT CONCAT(aciklama, ' (Silindi: ', silme_nedeni, ')') as aciklama, -puan as puan
+        FROM ilave_puan_silme_gecmisi
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        ORDER BY puan DESC
         LIMIT 5
     ");
-    $detayStmt->execute([$raporlar[$i]['id'], $yil, $ay]);
+    $detayStmt->execute([$raporlar[$i]['id'], $yil, $ay, $raporlar[$i]['id'], $yil, $ay]);
     $ilavePuanDetaylari[$raporlar[$i]['id']] = $detayStmt->fetchAll();
 }
 
@@ -319,15 +323,17 @@ require_once 'config/header.php';
                         </span>
                         <?php if(!empty($ilavePuanDetaylari[$raporlar[$i]['id']])): ?>
                         <br>
-                        <span style="color: #28a745; font-size: 12px; margin-left: 10px; font-weight: 500;">
+                        <span style="font-size: 12px; margin-left: 10px; font-weight: 500;">
                             <span class="no-print">💰 </span>İlave Puan:
                             <?php
                             $ilave_detaylar = [];
                             foreach($ilavePuanDetaylari[$raporlar[$i]['id']] as $detay) {
+                                $renk = $detay['puan'] < 0 ? '#dc3545' : '#28a745';
+                                $isaret = $detay['puan'] > 0 ? '+' : '';
                                 if($detay['aciklama']) {
-                                    $ilave_detaylar[] = $detay['aciklama'] . ' (+' . $detay['puan'] . ')';
+                                    $ilave_detaylar[] = '<span style="color: ' . $renk . ';">' . htmlspecialchars($detay['aciklama']) . ' (' . $isaret . $detay['puan'] . ')</span>';
                                 } else {
-                                    $ilave_detaylar[] = '+' . $detay['puan'] . ' puan';
+                                    $ilave_detaylar[] = '<span style="color: ' . $renk . ';">' . $isaret . $detay['puan'] . ' puan</span>';
                                 }
                             }
                             echo implode(' • ', $ilave_detaylar);
