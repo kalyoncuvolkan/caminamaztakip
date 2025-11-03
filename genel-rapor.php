@@ -41,6 +41,17 @@ $aktif_sayfa = 'raporlar';
 $sayfa_basligi = 'Genel Rapor - Cami Namaz Takip';
 require_once 'config/header.php';
 ?>
+        <style>
+            /* Öğrenci adı link hover efekti */
+            table td a:hover {
+                text-decoration: underline;
+                color: #5568d3;
+            }
+
+            .siralama-satir a:hover {
+                text-decoration: underline;
+            }
+        </style>
 
         <div class="rapor-container">
             <h2>📊 Genel Aylık Rapor</h2>
@@ -89,7 +100,11 @@ require_once 'config/header.php';
                         <?php foreach($raporlar as $index => $rapor): ?>
                         <tr class="<?php echo $index < 3 ? 'siralama-' . ($index + 1) : ''; ?>">
                             <td><?php echo $index + 1; ?>.</td>
-                            <td><?php echo $rapor['ad_soyad']; ?></td>
+                            <td>
+                                <a href="ozel-rapor.php?id=<?php echo $rapor['id']; ?>&yil=<?php echo $yil; ?>&ay=<?php echo $ay; ?>" style="color: #667eea; text-decoration: none; font-weight: 600;">
+                                    <?php echo $rapor['ad_soyad']; ?>
+                                </a>
+                            </td>
                             <td><?php echo $rapor['kendisi_sayisi']; ?></td>
                             <td><?php echo $rapor['babasi_sayisi']; ?></td>
                             <td><?php echo $rapor['annesi_sayisi']; ?></td>
@@ -114,7 +129,9 @@ require_once 'config/header.php';
                         <span class="siralama-badge badge-<?php echo $i + 1; ?>">
                             <?php echo ayAdi($ay); ?> Ayının <?php echo siralama($i + 1); ?>:
                         </span>
-                        <strong><?php echo $raporlar[$i]['ad_soyad']; ?></strong> 
+                        <a href="ozel-rapor.php?id=<?php echo $raporlar[$i]['id']; ?>&yil=<?php echo $yil; ?>&ay=<?php echo $ay; ?>" style="color: #333; text-decoration: none;">
+                            <strong><?php echo $raporlar[$i]['ad_soyad']; ?></strong>
+                        </a>
                         (<?php echo $raporlar[$i]['toplam_namaz']; ?> Vakit)
                     </p>
                     <?php endfor; ?>
