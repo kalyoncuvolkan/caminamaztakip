@@ -27,11 +27,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['namaz_kaydet'])) {
 
         if($bonus_puan > 0) {
             $bonusStmt = $pdo->prepare("
-                INSERT INTO ilave_puanlar (ogrenci_id, puan, aciklama, kategori, tarih)
-                VALUES (?, ?, ?, 'Namaz', ?)
+                INSERT INTO ilave_puanlar (ogrenci_id, puan, aciklama, kategori, tarih, veren_kullanici)
+                VALUES (?, ?, ?, 'Namaz', ?, ?)
             ");
             $aciklama = "$kiminle_geldi ile $namaz_vakti namazına geldi (bonus)";
-            $bonusStmt->execute([$ogrenci_id, $bonus_puan, $aciklama, $tarih]);
+            $bonusStmt->execute([$ogrenci_id, $bonus_puan, $aciklama, $tarih, getLoggedInUser()]);
         }
 
         $ogrenci_stmt = $pdo->prepare("SELECT ad_soyad FROM ogrenciler WHERE id = ?");
