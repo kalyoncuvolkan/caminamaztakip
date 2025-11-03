@@ -202,56 +202,24 @@ require_once 'config/header.php';
 
     <style>
         @media print {
-            /* Sadece rapor tablosunu göster */
-            body * {
-                visibility: hidden;
-            }
-
-            .rapor-baslik, .rapor-baslik * {
-                visibility: visible;
-            }
-
-            .detayli-rapor, .detayli-rapor * {
-                visibility: visible;
-            }
-
-            /* İlave puan detay tablosunu göster */
-            #ilavePuanDetayDiv, #ilavePuanDetayDiv * {
-                visibility: visible !important;
-            }
-
-            /* Başlık en üstte */
-            .rapor-baslik {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-            }
-
-            /* Tablo başlığın altında */
-            .detayli-rapor {
-                position: absolute;
-                left: 0;
-                top: 50px;
-                width: 100%;
-            }
-
-            /* İlave puan detay tablosu en altta */
-            #ilavePuanDetayDiv {
-                position: relative;
-                margin-top: 15px !important;
-            }
-
             /* Yazdırma sırasında gizlenecekler */
             .rapor-filtre,
-            .rapor-ozet,
             .ogrenci-bilgi-kutu,
-            .siralama-bilgi,
             .rapor-butonlar,
             nav,
             .btn-print,
             .btn-geri,
             h2 {
+                display: none !important;
+            }
+
+            /* Gizli elementleri göster */
+            #ilavePuanDetayDiv {
+                display: block !important;
+            }
+
+            /* Emojileri gizle */
+            .no-print {
                 display: none !important;
             }
 
@@ -263,67 +231,137 @@ require_once 'config/header.php';
 
             body {
                 margin: 0;
-                padding: 0;
+                padding: 10px;
             }
 
-            /* Başlık stil */
+            /* Başlık stil - kompakt */
             .rapor-baslik {
-                margin: 0 0 15px 0 !important;
-                padding: 0 !important;
+                margin: 0 0 10px 0 !important;
+                padding: 5px !important;
                 page-break-after: avoid;
+                border-bottom: 2px solid #000;
             }
 
             .rapor-baslik h3 {
-                font-size: 16px !important;
+                font-size: 13px !important;
                 margin: 0 !important;
                 text-align: center;
                 font-weight: bold;
             }
 
-            /* İlave Puan Detay Tablosu */
-            #ilavePuanDetayDiv {
-                margin-top: 15px !important;
-                padding: 10px !important;
+            /* Özet bilgileri - minimal ve kompakt */
+            .rapor-ozet {
+                display: block !important;
+                margin: 10px 0 !important;
+                padding: 8px !important;
+                border: 1px solid #000 !important;
+                background: #f8f9fa !important;
+                page-break-inside: avoid;
+            }
+
+            .rapor-ozet h4 {
+                display: none !important;
+            }
+
+            .ozet-kutular {
+                display: block !important;
+                margin: 0 !important;
+                font-size: 9px !important;
+            }
+
+            .ozet-kutu {
+                display: inline-block !important;
+                margin: 0 8px 5px 0 !important;
+                padding: 3px 6px !important;
+                border: 1px solid #000 !important;
                 background: white !important;
-                border: 1px solid #28a745 !important;
+                font-size: 9px !important;
+            }
+
+            .ozet-kutu .etiket {
+                font-weight: normal !important;
+                font-size: 9px !important;
+            }
+
+            .ozet-kutu .deger {
+                font-weight: bold !important;
+                font-size: 10px !important;
+                margin-left: 3px !important;
+            }
+
+            .ozet-kutu small {
+                display: none !important;
+            }
+
+            /* Sıralama bilgisi - kompakt */
+            .siralama-bilgi {
+                display: block !important;
+                margin: 8px 0 !important;
+                padding: 5px !important;
+                text-align: center !important;
+                font-size: 10px !important;
+                border-top: 1px solid #ddd !important;
+            }
+
+            .siralama-bilgi p {
+                margin: 0 !important;
+                font-size: 10px !important;
+            }
+
+            .siralama-vurgu {
+                font-weight: bold !important;
+                font-size: 11px !important;
+            }
+
+            /* İlave Puan Detay Tablosu - kompakt */
+            #ilavePuanDetayDiv {
+                margin-top: 10px !important;
+                padding: 8px !important;
+                background: white !important;
+                border: 1px solid #000 !important;
                 page-break-inside: avoid;
             }
 
             #ilavePuanDetayDiv h4 {
-                font-size: 12px !important;
-                margin: 0 0 10px 0 !important;
-                color: #28a745 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                font-size: 11px !important;
+                margin: 0 0 5px 0 !important;
+                color: #000 !important;
             }
 
             #ilavePuanDetayDiv table {
                 margin: 0 !important;
-            }
-
-            #ilavePuanDetayDiv th {
-                background: #28a745 !important;
-                color: white !important;
-                padding: 6px !important;
                 font-size: 9px !important;
             }
 
+            #ilavePuanDetayDiv th {
+                background: #e0e0e0 !important;
+                color: #000 !important;
+                padding: 4px !important;
+                font-size: 9px !important;
+                border: 1px solid #000 !important;
+            }
+
             #ilavePuanDetayDiv td {
-                padding: 5px !important;
+                padding: 3px !important;
                 font-size: 8px !important;
+                border: 1px solid #ddd !important;
             }
 
             #ilavePuanDetayDiv tfoot td {
-                background: #e8f5e9 !important;
+                background: #f0f0f0 !important;
                 font-weight: bold !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                font-size: 9px !important;
+                border: 1px solid #000 !important;
             }
 
-            /* Tablo stil */
-            table {
+            /* Ana tablo stil - kompakt */
+            .detayli-rapor {
+                margin-bottom: 10px !important;
+            }
+
+            .detayli-rapor table {
                 width: 100% !important;
-                font-size: 10px !important;
+                font-size: 9px !important;
                 border-collapse: collapse !important;
                 page-break-inside: auto;
             }
@@ -338,12 +376,11 @@ require_once 'config/header.php';
             }
 
             th {
-                background: #667eea !important;
-                color: white !important;
-                padding: 6px 4px !important;
-                font-size: 10px !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                background: #e0e0e0 !important;
+                color: #000 !important;
+                padding: 4px 3px !important;
+                font-size: 9px !important;
+                border: 1px solid #000 !important;
                 text-align: center !important;
             }
 
@@ -354,40 +391,39 @@ require_once 'config/header.php';
             }
 
             td {
-                padding: 5px 3px !important;
+                padding: 3px 2px !important;
                 border: 1px solid #ddd !important;
-                font-size: 9px !important;
+                font-size: 8px !important;
             }
 
             td strong {
-                font-size: 10px !important;
+                font-size: 9px !important;
             }
 
             td small {
                 font-size: 7px !important;
             }
 
-            /* Badge'ler */
+            /* Badge'ler - kompakt */
             .vakit-badge {
-                padding: 2px 4px !important;
+                padding: 1px 3px !important;
                 font-size: 7px !important;
-                margin: 1px !important;
+                margin: 0px !important;
                 border: 1px solid #ccc !important;
+                display: inline-block !important;
             }
 
             .vakit-badge.aktif {
-                background: #28a745 !important;
-                color: white !important;
-                border-color: #28a745 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                background: #ddd !important;
+                color: #000 !important;
+                border-color: #000 !important;
+                font-weight: bold !important;
             }
 
-            /* Renkler yazdırmada da görünsün */
+            /* Toplam satırı vurgulu */
             td[style*="background: #e8f5e9"] {
-                background: #e8f5e9 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                background: #f0f0f0 !important;
+                font-weight: bold !important;
             }
         }
     </style>
@@ -491,7 +527,7 @@ require_once 'config/header.php';
             </div>
 
             <div class="rapor-ozet">
-                <h4>📊 Özet Bilgiler</h4>
+                <h4><span class="no-print">📊 </span>Özet Bilgiler</h4>
                 <div class="ozet-kutular">
                     <div class="ozet-kutu">
                         <span class="etiket">Kendisi:</span>
@@ -530,7 +566,7 @@ require_once 'config/header.php';
 
                 <?php if(!empty($ilavePuanDetaylar)): ?>
                 <div id="ilavePuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #28a745;">
-                    <h4 style="margin-top: 0; color: #28a745;">💰 İlave Puan Detayları</h4>
+                    <h4 style="margin-top: 0; color: #28a745;"><span class="no-print">💰 </span>İlave Puan Detayları</h4>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #28a745; color: white;">
