@@ -38,7 +38,8 @@ if($ay) {
             SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
             SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus,
             COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'), 0) as gunluk_ilave_puan
+                WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'
+                AND aciklama NOT LIKE '%(bonus)%'), 0) as gunluk_ilave_puan
         FROM namaz_kayitlari n
         WHERE n.ogrenci_id = ? AND YEAR(n.tarih) = ? AND MONTH(n.tarih) = ?
         GROUP BY n.tarih
@@ -123,7 +124,8 @@ if($ay) {
             SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
             SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus,
             COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'), 0) as gunluk_ilave_puan
+                WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'
+                AND aciklama NOT LIKE '%(bonus)%'), 0) as gunluk_ilave_puan
         FROM namaz_kayitlari n
         WHERE n.ogrenci_id = ? AND YEAR(n.tarih) = ?
         GROUP BY n.tarih
