@@ -36,7 +36,7 @@ if($ay) {
             GROUP_CONCAT(DISTINCT n.kiminle_geldi) as kiminle_list,
             SUM(CASE WHEN n.kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
             SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
-            SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus,
+            SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END) as anne_babasi_bonus,
             COALESCE((SELECT SUM(puan) FROM ilave_puanlar
                 WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'
                 AND aciklama NOT LIKE '%(bonus)%'), 0) as gunluk_ilave_puan
@@ -126,7 +126,7 @@ if($ay) {
             GROUP_CONCAT(DISTINCT n.kiminle_geldi) as kiminle_list,
             SUM(CASE WHEN n.kiminle_geldi = 'Babası' THEN 1 ELSE 0 END) as babasi_sayisi,
             SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END) as annesi_sayisi,
-            SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 2 ELSE 0 END) as anne_babasi_bonus,
+            SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END) as anne_babasi_bonus,
             COALESCE((SELECT SUM(puan) FROM ilave_puanlar
                 WHERE ogrenci_id = ? AND tarih = n.tarih AND kategori = 'Namaz'
                 AND aciklama NOT LIKE '%(bonus)%'), 0) as gunluk_ilave_puan

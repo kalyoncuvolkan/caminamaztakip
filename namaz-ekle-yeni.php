@@ -17,12 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['namaz_kaydet'])) {
         $stmt = $pdo->prepare("INSERT INTO namaz_kayitlari (ogrenci_id, namaz_vakti, kiminle_geldi, tarih) VALUES (?, ?, ?, ?)");
         $stmt->execute([$ogrenci_id, $namaz_vakti, $kiminle_geldi, $tarih]);
 
-        // Bonus puan ekle (aileleriyle gelenlere)
+        // Bonus puan ekle (aileleriyle gelenlere - her durumda +1)
         $bonus_puan = 0;
-        if($kiminle_geldi == 'Babası' || $kiminle_geldi == 'Annesi') {
+        if($kiminle_geldi == 'Babası' || $kiminle_geldi == 'Annesi' || $kiminle_geldi == 'Anne-Babası') {
             $bonus_puan = 1;
-        } elseif($kiminle_geldi == 'Anne-Babası') {
-            $bonus_puan = 2;
         }
 
         if($bonus_puan > 0) {
