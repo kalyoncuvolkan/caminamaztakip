@@ -169,7 +169,7 @@ CREATE TABLE `namaz_kayitlari` (
   `namaz_vakti` enum('Sabah','Öğlen','İkindi','Akşam','Yatsı') NOT NULL,
   `kiminle_geldi` enum('Kendisi','Babası','Annesi','Anne-Babası') NOT NULL DEFAULT 'Kendisi',
   `tarih` date NOT NULL,
-  `saat` time DEFAULT curtime(),
+  `saat` time DEFAULT NULL,
   `kayit_zamani` timestamp NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_ogrenci_tarih` (`ogrenci_id`,`tarih`),

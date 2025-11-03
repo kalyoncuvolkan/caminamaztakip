@@ -9,6 +9,7 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
     $pdo->exec("SET NAMES 'utf8mb4' COLLATE 'utf8mb4_turkish_ci'");
+    $pdo->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 } catch(PDOException $e) {
     die("Veritabanı bağlantı hatası: " . $e->getMessage());
 }
