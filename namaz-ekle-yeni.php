@@ -340,7 +340,7 @@ require_once 'config/header.php';
                             <div>
                                 <h4>👨‍👩 Anne-Babası</h4>
                                 <p>Anne ve babası ile geldi</p>
-                                <small style="color: #28a745;">+2 bonus puan</small>
+                                <small style="color: #28a745;">+1 bonus puan</small>
                             </div>
                         </label>
                     </div>
@@ -509,10 +509,8 @@ require_once 'config/header.php';
             let bonusPuan = 0;
             const kiminle = selectedRadio.value;
 
-            if(kiminle === 'Babası' || kiminle === 'Annesi') {
+            if(kiminle === 'Babası' || kiminle === 'Annesi' || kiminle === 'Anne-Babası') {
                 bonusPuan = 1;
-            } else if(kiminle === 'Anne-Babası') {
-                bonusPuan = 2;
             }
 
             const toplamPuan = 1 + bonusPuan;
