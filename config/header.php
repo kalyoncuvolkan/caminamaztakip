@@ -95,12 +95,19 @@
                 margin-left: auto !important;
             }
         }
+
+        /* Yazdırma için global CSS */
+        @media print {
+            header h1.no-print {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>🕌 Cami Namaz Takip Programı</h1>
+            <h1 class="no-print">🕌 Cami Namaz Takip Programı</h1>
             <nav>
                 <button class="menu-toggle" onclick="toggleMenu()">☰</button>
                 <div class="nav-links" id="navLinks">
