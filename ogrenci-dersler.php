@@ -177,32 +177,48 @@ require_once 'config/header.php';
             background: white;
         }
 
-        /* Ana başlık */
-        .print-header {
-            text-align: center;
-            border: 2px solid #000;
-            padding: 15px;
-            margin-bottom: 20px;
-            background: #f0f0f0;
+        /* Ana başlık - kompakt */
+        div[style*="padding: 30px"] {
+            padding: 10px !important;
         }
 
-        .print-header h2 {
-            margin: 0;
-            font-size: 20px;
-            color: #000 !important;
+        h2 {
+            font-size: 14px !important;
+            margin: 0 0 10px 0 !important;
+            text-align: center !important;
+            border-bottom: 2px solid #000 !important;
+            padding-bottom: 5px !important;
         }
 
-        /* İstatistik kartları */
+        /* İstatistik kartları - kompakt */
+        div[style*="grid-template-columns"] {
+            display: block !important;
+            margin-bottom: 10px !important;
+        }
+
         div[style*="grid-template-columns"] > div {
+            display: inline-block !important;
             background: white !important;
-            border: 2px solid #000 !important;
+            border: 1px solid #000 !important;
             color: #000 !important;
-            padding: 15px !important;
+            padding: 5px 10px !important;
+            margin-right: 10px !important;
+            margin-bottom: 5px !important;
             page-break-inside: avoid;
         }
 
-        div[style*="grid-template-columns"] > div h3,
+        div[style*="grid-template-columns"] > div h3 {
+            display: inline !important;
+            font-size: 14px !important;
+            margin: 0 5px 0 0 !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+
         div[style*="grid-template-columns"] > div p {
+            display: inline !important;
+            font-size: 10px !important;
+            margin: 0 !important;
             color: #000 !important;
         }
 
@@ -210,30 +226,58 @@ require_once 'config/header.php';
         div[style*="background: #f8f9fa"] {
             background: white !important;
             border: 1px solid #000 !important;
+            padding: 10px !important;
+            margin-bottom: 10px !important;
             page-break-inside: avoid;
         }
 
         div[style*="background: #f8f9fa"] h3 {
             color: #000 !important;
-            font-size: 16px;
+            font-size: 13px !important;
+            margin: 0 0 8px 0 !important;
+        }
+
+        div[style*="background: #f8f9fa"] h4 {
+            font-size: 11px !important;
+            margin: 0 0 5px 0 !important;
         }
 
         /* Ders kartları - Verilen */
         div[style*="background: #d4edda"] {
             background: #e8e8e8 !important;
-            border: 2px solid #000 !important;
+            border: 1px solid #000 !important;
             page-break-inside: avoid;
-            padding: 10px !important;
-            margin-bottom: 8px !important;
+            padding: 5px 8px !important;
+            margin-bottom: 4px !important;
+            font-size: 10px !important;
+        }
+
+        div[style*="background: #d4edda"] strong {
+            font-size: 10px !important;
+        }
+
+        div[style*="background: #d4edda"] div {
+            font-size: 9px !important;
+            margin-top: 2px !important;
         }
 
         /* Ders kartları - Verilmeyen */
         div[style*="background: #f8d7da"] {
             background: white !important;
-            border: 2px dashed #666 !important;
+            border: 1px dashed #666 !important;
             page-break-inside: avoid;
-            padding: 10px !important;
-            margin-bottom: 8px !important;
+            padding: 5px 8px !important;
+            margin-bottom: 4px !important;
+            font-size: 10px !important;
+        }
+
+        div[style*="background: #f8d7da"] strong {
+            font-size: 10px !important;
+        }
+
+        div[style*="background: #f8d7da"] div {
+            font-size: 9px !important;
+            margin-top: 2px !important;
         }
 
         /* Ders adları ve puanlar */
@@ -246,43 +290,81 @@ require_once 'config/header.php';
         span[style*="background: #6c757d"] {
             background: #000 !important;
             color: white !important;
+            font-size: 9px !important;
+            padding: 2px 5px !important;
         }
 
         /* İlave puanlar tablosu */
         div[style*="background: #fff3cd"] {
             background: white !important;
-            border: 2px solid #000 !important;
+            border: 1px solid #000 !important;
+            padding: 10px !important;
             page-break-inside: avoid;
+        }
+
+        div[style*="background: #fff3cd"] h3 {
+            font-size: 11px !important;
+            margin: 0 0 5px 0 !important;
         }
 
         table {
             border-collapse: collapse;
             width: 100%;
-            font-size: 10px;
+            font-size: 9px;
         }
 
         table th,
         table td {
             border: 1px solid #000 !important;
-            padding: 5px !important;
+            padding: 3px !important;
             color: #000 !important;
         }
 
         table th {
             background: #e0e0e0 !important;
+            font-size: 9px !important;
         }
 
-        /* Özet bölümü */
+        table tfoot td {
+            font-size: 10px !important;
+            padding: 5px !important;
+        }
+
+        /* Özet bölümü - kompakt */
         div[style*="linear-gradient"] {
             background: #f0f0f0 !important;
             color: #000 !important;
-            border: 2px solid #000 !important;
+            border: 1px solid #000 !important;
+            padding: 10px !important;
             page-break-inside: avoid;
         }
 
-        div[style*="linear-gradient"] h3,
-        div[style*="linear-gradient"] p {
+        div[style*="linear-gradient"] h3 {
+            font-size: 12px !important;
+            margin: 0 0 8px 0 !important;
             color: #000 !important;
+        }
+
+        div[style*="linear-gradient"] > div[style*="display: grid"] {
+            display: block !important;
+        }
+
+        div[style*="linear-gradient"] > div[style*="display: grid"] > div {
+            display: inline-block !important;
+            margin-right: 15px !important;
+            margin-bottom: 5px !important;
+        }
+
+        div[style*="linear-gradient"] p {
+            font-size: 9px !important;
+            margin: 0 5px 0 0 !important;
+            display: inline !important;
+            color: #000 !important;
+        }
+
+        div[style*="linear-gradient"] p[style*="font-size: 32px"] {
+            font-size: 12px !important;
+            font-weight: bold !important;
         }
 
         /* Tüm renkli metinleri siyah yap */
