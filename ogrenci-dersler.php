@@ -155,31 +155,183 @@ $sayfa_basligi = 'Dersler - ' . $ogrenci['ad_soyad'] . ' - Cami Namaz Takip';
 require_once 'config/header.php';
 ?>
 
+<style>
+    @media print {
+        /* Gizlenecek elementler */
+        body > div.container > header,
+        nav,
+        .btn-primary,
+        .btn-sm,
+        .btn-success,
+        button,
+        form,
+        .no-print,
+        #dersEkleForm {
+            display: none !important;
+        }
+
+        /* Sayfa düzeni */
+        body {
+            margin: 0;
+            padding: 15px;
+            background: white;
+        }
+
+        /* Ana başlık */
+        .print-header {
+            text-align: center;
+            border: 2px solid #000;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: #f0f0f0;
+        }
+
+        .print-header h2 {
+            margin: 0;
+            font-size: 20px;
+            color: #000 !important;
+        }
+
+        /* İstatistik kartları */
+        div[style*="grid-template-columns"] > div {
+            background: white !important;
+            border: 2px solid #000 !important;
+            color: #000 !important;
+            padding: 15px !important;
+            page-break-inside: avoid;
+        }
+
+        div[style*="grid-template-columns"] > div h3,
+        div[style*="grid-template-columns"] > div p {
+            color: #000 !important;
+        }
+
+        /* Kategori başlıkları */
+        div[style*="background: #f8f9fa"] {
+            background: white !important;
+            border: 1px solid #000 !important;
+            page-break-inside: avoid;
+        }
+
+        div[style*="background: #f8f9fa"] h3 {
+            color: #000 !important;
+            font-size: 16px;
+        }
+
+        /* Ders kartları - Verilen */
+        div[style*="background: #d4edda"] {
+            background: #e8e8e8 !important;
+            border: 2px solid #000 !important;
+            page-break-inside: avoid;
+            padding: 10px !important;
+            margin-bottom: 8px !important;
+        }
+
+        /* Ders kartları - Verilmeyen */
+        div[style*="background: #f8d7da"] {
+            background: white !important;
+            border: 2px dashed #666 !important;
+            page-break-inside: avoid;
+            padding: 10px !important;
+            margin-bottom: 8px !important;
+        }
+
+        /* Ders adları ve puanlar */
+        div[style*="background: #d4edda"] strong,
+        div[style*="background: #f8d7da"] strong {
+            color: #000 !important;
+        }
+
+        span[style*="background: #28a745"],
+        span[style*="background: #6c757d"] {
+            background: #000 !important;
+            color: white !important;
+        }
+
+        /* İlave puanlar tablosu */
+        div[style*="background: #fff3cd"] {
+            background: white !important;
+            border: 2px solid #000 !important;
+            page-break-inside: avoid;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            font-size: 10px;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #000 !important;
+            padding: 5px !important;
+            color: #000 !important;
+        }
+
+        table th {
+            background: #e0e0e0 !important;
+        }
+
+        /* Özet bölümü */
+        div[style*="linear-gradient"] {
+            background: #f0f0f0 !important;
+            color: #000 !important;
+            border: 2px solid #000 !important;
+            page-break-inside: avoid;
+        }
+
+        div[style*="linear-gradient"] h3,
+        div[style*="linear-gradient"] p {
+            color: #000 !important;
+        }
+
+        /* Tüm renkli metinleri siyah yap */
+        * {
+            color: #000 !important;
+        }
+
+        /* Silinen dersler bölümü - yazdırmada gizle */
+        div[style*="🗑️ Silinen Dersler"] {
+            display: none !important;
+        }
+
+        /* Ders ekleme bölümünü gizle */
+        div[style*="background: #e8f5e9"] {
+            display: none !important;
+        }
+    }
+</style>
+
 <div style="padding: 30px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-        <h2 style="margin: 0;">📚 <?php echo htmlspecialchars($ogrenci['ad_soyad']); ?> - Dersler</h2>
-        <a href="ogrenciler.php" class="btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px;">
-            ← Öğrenci Listesi
-        </a>
+        <h2 style="margin: 0;"><span class="no-print">📚 </span><?php echo htmlspecialchars($ogrenci['ad_soyad']); ?> - Dersler</h2>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="window.print()" class="btn-primary" style="padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; background: #667eea; color: white;">
+                🖨️ Yazdır
+            </button>
+            <a href="ogrenciler.php" class="btn-primary" style="text-decoration: none; display: inline-block; padding: 10px 20px;">
+                ← Öğrenci Listesi
+            </a>
+        </div>
     </div>
 
     <!-- İstatistikler -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
             <h3 style="margin: 0; font-size: 42px;"><?php echo $stats['toplam_ders'] ?? 0; ?></h3>
-            <p style="margin: 10px 0 0 0;">📖 Toplam Ders</p>
+            <p style="margin: 10px 0 0 0;"><span class="no-print">📖 </span>Toplam Ders</p>
         </div>
         <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
             <h3 style="margin: 0; font-size: 42px;"><?php echo $stats['tamamlanan'] ?? 0; ?></h3>
-            <p style="margin: 10px 0 0 0;">✅ Tamamlanan</p>
+            <p style="margin: 10px 0 0 0;"><span class="no-print">✅ </span>Tamamlanan</p>
         </div>
         <div style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
             <h3 style="margin: 0; font-size: 42px;"><?php echo $toplam_ders_puani; ?></h3>
-            <p style="margin: 10px 0 0 0;">⭐ Toplam Puan</p>
+            <p style="margin: 10px 0 0 0;"><span class="no-print">⭐ </span>Toplam Puan</p>
         </div>
         <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 25px; border-radius: 12px; text-align: center;">
             <h3 style="margin: 0; font-size: 42px;">#<?php echo $siralama; ?></h3>
-            <p style="margin: 10px 0 0 0;">🏆 Sıralama</p>
+            <p style="margin: 10px 0 0 0;"><span class="no-print">🏆 </span>Sıralama</p>
             <p style="margin: 5px 0 0 0; font-size: 12px; opacity: 0.9;"><?php echo $toplam_ogrenci; ?> öğrenci arasında</p>
         </div>
     </div>
@@ -248,7 +400,7 @@ require_once 'config/header.php';
 
         <div style="background: #f8f9fa; padding: 25px; border-radius: 12px; margin-bottom: 25px;">
             <h3 style="margin: 0 0 20px 0; color: #667eea;">
-                📚 <?php echo htmlspecialchars($kat['kategori_adi']); ?>
+                <span class="no-print">📚 </span><?php echo htmlspecialchars($kat['kategori_adi']); ?>
                 <span style="font-size: 14px; font-weight: normal; color: #666;">
                     (<?php echo count($verilen); ?>/<?php echo count($dersler); ?> tamamlandı)
                 </span>
@@ -257,7 +409,7 @@ require_once 'config/header.php';
             <!-- Verilen Dersler -->
             <?php if(!empty($verilen)): ?>
             <div style="margin-bottom: 25px;">
-                <h4 style="color: #28a745; margin: 0 0 15px 0;">✅ Verilen Dersler</h4>
+                <h4 style="color: #28a745; margin: 0 0 15px 0;"><span class="no-print">✅ </span>Verilen Dersler</h4>
                 <?php foreach($verilen as $ders): ?>
                 <div id="ders-<?php echo $ders['ogrenci_ders_id']; ?>" style="background: #d4edda; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 2px solid #c3e6cb;">
                     <div style="flex: 1;">
@@ -267,12 +419,12 @@ require_once 'config/header.php';
                         </span>
                         <?php if($ders['verme_tarihi']): ?>
                         <div style="font-size: 13px; color: #666; margin-top: 5px;">
-                            📅 <?php echo date('d.m.Y l - H:i', strtotime($ders['verme_tarihi'])); ?>
+                            <span class="no-print">📅 </span><?php echo date('d.m.Y l - H:i', strtotime($ders['verme_tarihi'])); ?>
                         </div>
                         <?php endif; ?>
                         <?php if($ders['aktif_edilme_sayisi'] > 0): ?>
                         <div style="font-size: 12px; color: #856404; margin-top: 3px;">
-                            ⚠️ <?php echo $ders['aktif_edilme_sayisi']; ?> kez tekrar aktif edildi
+                            <span class="no-print">⚠️ </span><?php echo $ders['aktif_edilme_sayisi']; ?> kez tekrar aktif edildi
                         </div>
                         <?php endif; ?>
                     </div>
@@ -292,7 +444,7 @@ require_once 'config/header.php';
             <!-- Verilmeyen Dersler -->
             <?php if(!empty($verilmeyen)): ?>
             <div>
-                <h4 style="color: #dc3545; margin: 0 0 15px 0;">❌ Verilmeyen Dersler</h4>
+                <h4 style="color: #dc3545; margin: 0 0 15px 0;"><span class="no-print">❌ </span>Verilmeyen Dersler</h4>
                 <?php foreach($verilmeyen as $ders): ?>
                 <div id="ders-<?php echo $ders['ogrenci_ders_id']; ?>" style="background: #f8d7da; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 2px solid #f5c6cb;">
                     <div style="flex: 1;">
@@ -302,7 +454,7 @@ require_once 'config/header.php';
                         </span>
                         <?php if($ders['aktif_edilme_sayisi'] > 0): ?>
                         <div style="font-size: 12px; color: #856404; margin-top: 3px;">
-                            ⚠️ <?php echo $ders['aktif_edilme_sayisi']; ?> kez aktif edildi, henüz verilmedi
+                            <span class="no-print">⚠️ </span><?php echo $ders['aktif_edilme_sayisi']; ?> kez aktif edildi, henüz verilmedi
                         </div>
                         <?php endif; ?>
                     </div>
@@ -324,7 +476,7 @@ require_once 'config/header.php';
     <!-- İlave Ders Puanları -->
     <?php if(count($ilave_puanlar) > 0): ?>
     <div style="background: #fff3cd; padding: 25px; border-radius: 12px; margin-top: 30px;">
-        <h3 style="margin: 0 0 20px 0;">⭐ Aldığınız İlave Ders Puanları</h3>
+        <h3 style="margin: 0 0 20px 0;"><span class="no-print">⭐ </span>Aldığınız İlave Ders Puanları</h3>
         <table style="width: 100%;">
             <thead>
                 <tr>
@@ -399,7 +551,7 @@ require_once 'config/header.php';
 
     <!-- Toplam Özet -->
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-top: 30px; text-align: center;">
-        <h3 style="margin: 0 0 15px 0;">📊 Genel Özet</h3>
+        <h3 style="margin: 0 0 15px 0;"><span class="no-print">📊 </span>Genel Özet</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
             <div>
                 <p style="margin: 0; font-size: 14px; opacity: 0.9;">Ders Puanı</p>
