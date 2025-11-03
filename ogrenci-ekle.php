@@ -74,12 +74,11 @@ function turkishToEnglish($text) {
     return str_replace($turkish, $english, $text);
 }
 
-// Rastgele şifre oluştur
+// Rastgele şifre oluştur (8 haneli rakam)
 function generateRandomPassword($length = 8) {
-    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     $password = '';
     for ($i = 0; $i < $length; $i++) {
-        $password .= $characters[rand(0, strlen($characters) - 1)];
+        $password .= rand(0, 9);
     }
     return $password;
 }

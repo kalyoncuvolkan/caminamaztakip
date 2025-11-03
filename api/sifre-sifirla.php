@@ -28,12 +28,11 @@ if($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit;
     }
 
-    // Yeni rastgele şifre oluştur
+    // Yeni rastgele şifre oluştur (8 haneli rakam)
     function generateRandomPassword($length = 8) {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $password = '';
         for ($i = 0; $i < $length; $i++) {
-            $password .= $characters[rand(0, strlen($characters) - 1)];
+            $password .= rand(0, 9);
         }
         return $password;
     }
