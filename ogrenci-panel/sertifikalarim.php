@@ -15,10 +15,12 @@ $ogr = $pdo->prepare("SELECT * FROM ogrenciler WHERE id = ?");
 $ogr->execute([$ogrenci_id]);
 $ogrenci = $ogr->fetch();
 
-// Sertifikaları çek
+// Sertifikaları çek (DEBUG)
+// error_log("DEBUG: ogrenci_id = " . $ogrenci_id);
 $sertifikalar = $pdo->prepare("SELECT * FROM sertifikalar WHERE ogrenci_id = ? ORDER BY tarih DESC");
 $sertifikalar->execute([$ogrenci_id]);
 $sertifika_listesi = $sertifikalar->fetchAll();
+// error_log("DEBUG: Bulunan sertifika sayısı = " . count($sertifika_listesi));
 
 // İstatistikler
 $stats = [
@@ -218,6 +220,15 @@ foreach($sertifika_listesi as $sert) {
         <div style="padding: 30px;">
             <h2>🏆 Sertifikalarım</h2>
             <p style="color: #666; margin-bottom: 20px;">Merhaba, <?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>! Kazandığınız tüm sertifikalar burada.</p>
+
+            <!-- DEBUG: Geçici kontrol -->
+            <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 20px; font-size: 12px;">
+                <strong>🔍 Debug Bilgisi:</strong> Öğrenci ID: <?php echo $ogrenci_id; ?> |
+                Bulunan Sertifika: <?php echo count($sertifika_listesi); ?> adet
+                <?php if(count($sertifika_listesi) > 0): ?>
+                    | İlk Sertifika: <?php echo htmlspecialchars($sertifika_listesi[0]['baslik']); ?>
+                <?php endif; ?>
+            </div>
 
             <!-- İstatistik Kartları -->
             <div class="stats-cards">
