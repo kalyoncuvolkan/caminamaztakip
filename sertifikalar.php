@@ -49,13 +49,16 @@ require_once 'config/header.php';
                 <thead><tr><th>Öğrenci</th><th>Tip</th><th>Başlık</th><th>Dönem</th><th>Tarih</th><th>İşlem</th></tr></thead>
                 <tbody>
                     <?php foreach($sertifikalar as $s): ?>
-                    <tr>
+                    <tr id="sertifika-<?php echo $s['id']; ?>">
                         <td><?php echo $s['ad_soyad']; ?></td>
                         <td><span style="padding: 5px 10px; border-radius: 10px; background: <?php echo $s['sertifika_tipi']=='Namaz'?'#e3f2fd':'#fff3e0'; ?>;"><?php echo $s['sertifika_tipi']; ?></span></td>
                         <td><strong><?php echo $s['baslik']; ?></strong></td>
                         <td><?php echo $s['donem']; ?></td>
                         <td><?php echo date('d.m.Y', strtotime($s['tarih'])); ?></td>
-                        <td><button onclick="yazdir(<?php echo $s['id']; ?>)" class="btn-sm" style="background: #17a2b8; color: white;">🖨️ Yazdır</button></td>
+                        <td>
+                            <button onclick="yazdir(<?php echo $s['id']; ?>)" class="btn-sm" style="background: #17a2b8; color: white; margin-right: 5px;">🖨️ Yazdır</button>
+                            <button onclick="sertifikaSil(<?php echo $s['id']; ?>, '<?php echo htmlspecialchars($s['ad_soyad']); ?>', '<?php echo htmlspecialchars($s['baslik']); ?>')" class="btn-sm" style="background: #dc3545; color: white;">🗑️ Sil</button>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -65,6 +68,31 @@ require_once 'config/header.php';
     <script>
     function yazdir(id) {
         window.open('sertifika-yazdir.php?id=' + id, '_blank');
+    }
+
+    function sertifikaSil(id, ogrenciAdi, baslik) {
+        if(!confirm('⚠️ UYARI: Bu sertifikayı kalıcı olarak silmek istediğinize emin misiniz?\n\nÖğrenci: ' + ogrenciAdi + '\nSertifika: ' + baslik + '\n\nBu işlem geri alınamaz!')) {
+            return;
+        }
+
+        fetch('api/sertifika-sil.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'sertifika_id=' + id
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.success) {
+                alert('✅ ' + data.message);
+                // Satırı tablodan kaldır
+                document.getElementById('sertifika-' + id).remove();
+            } else {
+                alert('❌ ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('❌ Bir hata oluştu: ' + error);
+        });
     }
     </script>
 <?php require_once 'config/footer.php'; ?>
