@@ -276,6 +276,8 @@ $istatistikler = $stats->fetch();
             <nav>
                 <a href="index.php">Panel</a>
                 <a href="mesajlarim.php" class="active">💬 Mesajlarım</a>
+                <a href="raporlarim.php">📊 Raporlarım</a>
+                <a href="sertifikalarim.php">🏆 Sertifikalarım</a>
                 <a href="logout.php" style="margin-left: auto">Çıkış</a>
             </nav>
         </header>
