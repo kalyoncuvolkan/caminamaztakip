@@ -16,7 +16,7 @@ $ogr->execute([$ogrenci_id]);
 $ogrenci = $ogr->fetch();
 
 // Sertifikaları çek
-$sertifikalar = $pdo->prepare("SELECT * FROM sertifikalar WHERE ogrenci_id = ? ORDER BY verilis_tarihi DESC");
+$sertifikalar = $pdo->prepare("SELECT * FROM sertifikalar WHERE ogrenci_id = ? ORDER BY tarih DESC");
 $sertifikalar->execute([$ogrenci_id]);
 $sertifika_listesi = $sertifikalar->fetchAll();
 
@@ -28,9 +28,9 @@ $stats = [
 ];
 
 foreach($sertifika_listesi as $sert) {
-    if(date('Y', strtotime($sert['verilis_tarihi'])) == date('Y')) {
+    if(date('Y', strtotime($sert['tarih'])) == date('Y')) {
         $stats['bu_yil']++;
-        if(date('m', strtotime($sert['verilis_tarihi'])) == date('m')) {
+        if(date('m', strtotime($sert['tarih'])) == date('m')) {
             $stats['bu_ay']++;
         }
     }
@@ -241,17 +241,25 @@ foreach($sertifika_listesi as $sert) {
                 <div class="sertifika-card">
                     <div class="sertifika-header">
                         <div class="sertifika-baslik">
-                            <h3>🏆 <?php echo htmlspecialchars($sertifika['sertifika_turu']); ?></h3>
-                            <?php if($sertifika['ders_adi']): ?>
+                            <h3>🏆 <?php echo htmlspecialchars($sertifika['baslik']); ?></h3>
                             <p style="color: #666; margin: 5px 0;">
-                                <strong>Ders:</strong> <?php echo htmlspecialchars($sertifika['ders_adi']); ?>
+                                <strong>Tür:</strong> <?php echo htmlspecialchars($sertifika['sertifika_tipi']); ?>
+                            </p>
+                            <?php if($sertifika['donem']): ?>
+                            <p style="color: #666; margin: 5px 0;">
+                                <strong>Dönem:</strong> <?php echo htmlspecialchars($sertifika['donem']); ?>
+                            </p>
+                            <?php endif; ?>
+                            <?php if($sertifika['derece']): ?>
+                            <p style="color: #666; margin: 5px 0;">
+                                <strong>Derece:</strong> <?php echo htmlspecialchars($sertifika['derece']); ?>
                             </p>
                             <?php endif; ?>
                         </div>
                         <div class="sertifika-tarih">
                             <span class="sertifika-tarih-label">Veriliş Tarihi</span>
                             <div class="sertifika-tarih-value">
-                                <?php echo date('d.m.Y', strtotime($sertifika['verilis_tarihi'])); ?>
+                                <?php echo date('d.m.Y', strtotime($sertifika['tarih'])); ?>
                             </div>
                         </div>
                     </div>
@@ -264,7 +272,7 @@ foreach($sertifika_listesi as $sert) {
 
                     <div class="sertifika-footer">
                         <div class="sertifika-veren">
-                            👤 Veren: <strong><?php echo htmlspecialchars($sertifika['veren_kullanici']); ?></strong>
+                            👤 Veren: <strong><?php echo htmlspecialchars($sertifika['olusturan_kullanici']); ?></strong>
                         </div>
                         <a href="../sertifika-yazdir.php?id=<?php echo $sertifika['id']; ?>" target="_blank" class="btn-print">
                             🖨️ Sertifikayı Yazdır
