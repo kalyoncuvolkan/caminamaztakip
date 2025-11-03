@@ -243,7 +243,7 @@ require_once 'config/header.php';
                                 <a href="ozel-rapor.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm" style="background: #007bff; color: white;">🕌 Namaz Raporu</a>
                                 <a href="donem-rapor.php?id=<?php echo $ogrenci['id']; ?>" class="btn-sm" style="background: #6f42c1; color: white;">📚 Ders Raporu</a>
                                 <button onclick="sifreSifirla(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>')" class="btn-sm" style="background: #ffc107; color: #000;">🔒 Şifre Sıfırla</button>
-                                <button onclick="ogrenciSil(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>')" class="btn-sm btn-delete">🗑️ Sil</button>
+                                <button onclick="ogrenciSil(<?php echo $ogrenci['id']; ?>, '<?php echo htmlspecialchars($ogrenci['ad_soyad']); ?>', <?php echo $ogrenci['aktif']; ?>)" class="btn-sm btn-delete">🗑️ Sil</button>
                             </div>
                         </td>
                     </tr>
@@ -275,24 +275,10 @@ require_once 'config/header.php';
                 });
         }
 
-        function ogrenciSil(id, adSoyad) {
-            if(confirm('❓ ' + adSoyad + ' isimli öğrenciyi silmek istediğinize emin misiniz?\n\n⚠️ Bu işlem öğrenciyi pasif duruma getirecektir. Tamamen silmek için "İptal" sonrası "Tamamen Sil" seçeneğini kullanın.')) {
-                fetch('api/ogrenci-sil.php', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    body: 'ogrenci_id=' + id
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        alert('✅ ' + data.message);
-                        location.reload();
-                    } else {
-                        alert('❌ ' + data.message);
-                    }
-                });
-            } else {
-                if(confirm('⚠️ UYARI: Öğrenciyi TAMAMEN silmek istiyor musunuz?\n\nBu işlem:\n- Tüm namaz kayıtlarını\n- Tüm ders kayıtlarını\n- Tüm sertifikaları\n- Tüm ilave puanları\nKALICI OLARAK SİLECEKTİR!\n\nBu işlem GERİ ALINAMAZ!')) {
+        function ogrenciSil(id, adSoyad, aktif) {
+            // Eğer öğrenci zaten pasifse, direkt tamamen silme seçeneği sun
+            if(aktif == 0) {
+                if(confirm('⚠️ UYARI: ' + adSoyad + ' zaten pasif durumda.\n\nÖğrenciyi TAMAMEN silmek istiyor musunuz?\n\nBu işlem:\n- Tüm namaz kayıtlarını\n- Tüm ders kayıtlarını\n- Tüm sertifikaları\n- Tüm ilave puanları\nKALICI OLARAK SİLECEKTİR!\n\nBu işlem GERİ ALINAMAZ!')) {
                     fetch('api/ogrenci-sil.php', {
                         method: 'POST',
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -307,6 +293,41 @@ require_once 'config/header.php';
                             alert('❌ ' + data.message);
                         }
                     });
+                }
+            } else {
+                // Aktif öğrenci için önce pasif etme seçeneği sun
+                if(confirm('❓ ' + adSoyad + ' isimli öğrenciyi silmek istediğinize emin misiniz?\n\n⚠️ Bu işlem öğrenciyi pasif duruma getirecektir. Tamamen silmek için "İptal" sonrası "Tamamen Sil" seçeneğini kullanın.')) {
+                    fetch('api/ogrenci-sil.php', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                        body: 'ogrenci_id=' + id
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.success) {
+                            alert('✅ ' + data.message);
+                            location.reload();
+                        } else {
+                            alert('❌ ' + data.message);
+                        }
+                    });
+                } else {
+                    if(confirm('⚠️ UYARI: Öğrenciyi TAMAMEN silmek istiyor musunuz?\n\nBu işlem:\n- Tüm namaz kayıtlarını\n- Tüm ders kayıtlarını\n- Tüm sertifikaları\n- Tüm ilave puanları\nKALICI OLARAK SİLECEKTİR!\n\nBu işlem GERİ ALINAMAZ!')) {
+                        fetch('api/ogrenci-sil.php', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                            body: 'ogrenci_id=' + id + '&tamamen_sil=true'
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.success) {
+                                alert('✅ ' + data.message);
+                                location.reload();
+                            } else {
+                                alert('❌ ' + data.message);
+                            }
+                        });
+                    }
                 }
             }
         }
