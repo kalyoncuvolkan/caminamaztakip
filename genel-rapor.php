@@ -37,6 +37,21 @@ foreach($raporlar as $rapor) {
 
 $yillar = $pdo->query("SELECT DISTINCT YEAR(tarih) as yil FROM namaz_kayitlari ORDER BY yil DESC")->fetchAll();
 
+// İlk 3 öğrenci için ilave puan detaylarını çek
+$ilavePuanDetaylari = [];
+for($i = 0; $i < min(3, count($raporlar)); $i++) {
+    $detayStmt = $pdo->prepare("
+        SELECT aciklama, puan
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        AND aciklama NOT LIKE '%(bonus)%'
+        ORDER BY tarih DESC
+        LIMIT 5
+    ");
+    $detayStmt->execute([$raporlar[$i]['id'], $yil, $ay]);
+    $ilavePuanDetaylari[$raporlar[$i]['id']] = $detayStmt->fetchAll();
+}
+
 $aktif_sayfa = 'raporlar';
 $sayfa_basligi = 'Genel Rapor - Cami Namaz Takip';
 require_once 'config/header.php';
@@ -167,6 +182,23 @@ require_once 'config/header.php';
                             echo implode(' • ', $detaylar);
                             ?>
                         </span>
+                        <?php if(!empty($ilavePuanDetaylari[$raporlar[$i]['id']])): ?>
+                        <br>
+                        <span style="color: #28a745; font-size: 12px; margin-left: 10px; font-weight: 500;">
+                            💰 İlave Puan:
+                            <?php
+                            $ilave_detaylar = [];
+                            foreach($ilavePuanDetaylari[$raporlar[$i]['id']] as $detay) {
+                                if($detay['aciklama']) {
+                                    $ilave_detaylar[] = $detay['aciklama'] . ' (+' . $detay['puan'] . ')';
+                                } else {
+                                    $ilave_detaylar[] = '+' . $detay['puan'] . ' puan';
+                                }
+                            }
+                            echo implode(' • ', $ilave_detaylar);
+                            ?>
+                        </span>
+                        <?php endif; ?>
                     </p>
                     <?php endfor; ?>
                 </div>
