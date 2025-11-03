@@ -74,10 +74,145 @@ require_once 'config/header.php';
             .siralama-satir a:hover {
                 text-decoration: underline;
             }
+
+            /* Yazdırma stilleri */
+            @media print {
+                /* Sayfayı gizle */
+                body > div.container > header,
+                .rapor-filtre,
+                .rapor-butonlar,
+                nav,
+                .btn-print,
+                .btn-export,
+                .no-print {
+                    display: none !important;
+                }
+
+                /* Sayfa düzeni */
+                body {
+                    margin: 0;
+                    padding: 20px;
+                    background: white;
+                }
+
+                .rapor-container {
+                    width: 100%;
+                    max-width: 100%;
+                    padding: 0;
+                    box-shadow: none;
+                }
+
+                /* Başlık */
+                .rapor-baslik h3 {
+                    font-size: 18px;
+                    margin: 0 0 20px 0;
+                    padding: 0;
+                    text-align: center;
+                    border: 2px solid #000;
+                    padding: 10px;
+                    background: #f0f0f0;
+                }
+
+                /* Tablo stilleri */
+                .rapor-tablo table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 10px;
+                    margin-bottom: 20px;
+                }
+
+                .rapor-tablo table th,
+                .rapor-tablo table td {
+                    border: 1px solid #000;
+                    padding: 5px 3px;
+                    text-align: center;
+                }
+
+                .rapor-tablo table th {
+                    background: #e0e0e0;
+                    font-weight: bold;
+                }
+
+                /* Link stillerini kaldır */
+                .rapor-tablo table td a {
+                    color: #000 !important;
+                    text-decoration: none !important;
+                    font-weight: normal !important;
+                }
+
+                /* Sıralama satırları */
+                .siralama-satir {
+                    border: 1px solid #000;
+                    border-radius: 0;
+                    background: white !important;
+                    padding: 8px;
+                    margin-bottom: 8px;
+                    page-break-inside: avoid;
+                }
+
+                .siralama-satir a {
+                    color: #000 !important;
+                    text-decoration: none !important;
+                }
+
+                /* Özel sıralama stilleri */
+                tr.siralama-1 td {
+                    background: #ffd700 !important;
+                    font-weight: bold;
+                }
+
+                tr.siralama-2 td {
+                    background: #c0c0c0 !important;
+                    font-weight: bold;
+                }
+
+                tr.siralama-3 td {
+                    background: #cd7f32 !important;
+                    font-weight: bold;
+                }
+
+                /* Renkli metinleri siyah yap */
+                * {
+                    color: #000 !important;
+                }
+
+                /* Özet bölümü */
+                .rapor-ozet {
+                    border-top: 2px solid #000;
+                    padding-top: 15px;
+                    font-size: 11px;
+                }
+
+                .rapor-ozet h4 {
+                    font-size: 14px;
+                    margin-bottom: 10px;
+                    text-align: center;
+                    border-bottom: 1px solid #000;
+                    padding-bottom: 5px;
+                }
+
+                /* Sayfa sonu kontrolü */
+                .rapor-tablo,
+                .aylik-siralama {
+                    page-break-inside: avoid;
+                }
+
+                /* İkonları gizle - sadece metin */
+                .rapor-baslik h3::before,
+                .aylik-siralama h4::before {
+                    content: '' !important;
+                }
+
+                /* Emoji ve ikonları temizle */
+                span[style*="font-size: 12px"]::before,
+                span[style*="font-size: 14px"]::before {
+                    content: '' !important;
+                }
+            }
         </style>
 
         <div class="rapor-container">
-            <h2>📊 Genel Aylık Rapor</h2>
+            <h2 class="no-print">📊 Genel Aylık Rapor</h2>
             
             <form method="GET" action="" class="rapor-filtre">
                 <div class="form-group inline">
@@ -100,7 +235,7 @@ require_once 'config/header.php';
             </form>
 
             <div class="rapor-baslik">
-                <h3><?php echo strtoupper(ayAdi($ay)) . ' ' . $yil; ?> AYI ÖĞRENCİ NAMAZA KATILIM RAPORU</h3>
+                <h3 class="print-title"><?php echo strtoupper(ayAdi($ay)) . ' ' . $yil; ?> AYI ÖĞRENCİ NAMAZA KATILIM RAPORU</h3>
             </div>
 
             <?php if(count($raporlar) > 0): ?>
@@ -146,7 +281,7 @@ require_once 'config/header.php';
                 <p><strong>Toplam vakit sayısı:</strong> <?php echo $toplamVakit; ?></p>
                 
                 <div class="aylik-siralama">
-                    <h4>🏆 <?php echo ayAdi($ay); ?> Ayı Sıralaması</h4>
+                    <h4><span class="no-print">🏆 </span><?php echo ayAdi($ay); ?> Ayı Sıralaması</h4>
                     <?php for($i = 0; $i < min(3, count($raporlar)); $i++): ?>
                     <p class="siralama-satir">
                         <span class="siralama-badge badge-<?php echo $i + 1; ?>">
@@ -157,7 +292,7 @@ require_once 'config/header.php';
                         </a>
                         <br>
                         <span style="color: #666; font-size: 14px; margin-left: 10px;">
-                            📿 <?php echo $raporlar[$i]['toplam_namaz']; ?> Vakit
+                            <span class="no-print">📿 </span><?php echo $raporlar[$i]['toplam_namaz']; ?> Vakit
                             <?php if($raporlar[$i]['ilave_puan'] > 0): ?>
                                 <span style="color: #28a745; font-weight: 600;"> + <?php echo $raporlar[$i]['ilave_puan']; ?> İlave Puan</span>
                             <?php endif; ?>
@@ -185,7 +320,7 @@ require_once 'config/header.php';
                         <?php if(!empty($ilavePuanDetaylari[$raporlar[$i]['id']])): ?>
                         <br>
                         <span style="color: #28a745; font-size: 12px; margin-left: 10px; font-weight: 500;">
-                            💰 İlave Puan:
+                            <span class="no-print">💰 </span>İlave Puan:
                             <?php
                             $ilave_detaylar = [];
                             foreach($ilavePuanDetaylari[$raporlar[$i]['id']] as $detay) {
