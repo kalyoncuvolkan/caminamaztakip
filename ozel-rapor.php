@@ -534,7 +534,7 @@ require_once 'config/header.php';
                 <h4><span class="no-print">📊 </span>Özet Bilgiler</h4>
                 <div class="ozet-kutular">
                     <div class="ozet-kutu">
-                        <span class="etiket">Kendisi:</span>
+                        <span class="etiket">Tek Başına:</span>
                         <span class="deger"><?php echo $ozetRapor['kendisi'] ?? 0; ?></span>
                     </div>
                     <div class="ozet-kutu">
