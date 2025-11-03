@@ -48,6 +48,14 @@ require_once 'config/header.php';
                 color: #5568d3;
             }
 
+            .siralama-satir {
+                margin-bottom: 15px;
+                padding: 10px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 4px solid #667eea;
+            }
+
             .siralama-satir a:hover {
                 text-decoration: underline;
             }
@@ -132,7 +140,33 @@ require_once 'config/header.php';
                         <a href="ozel-rapor.php?id=<?php echo $raporlar[$i]['id']; ?>&yil=<?php echo $yil; ?>&ay=<?php echo $ay; ?>" style="color: #333; text-decoration: none;">
                             <strong><?php echo $raporlar[$i]['ad_soyad']; ?></strong>
                         </a>
-                        (<?php echo $raporlar[$i]['toplam_namaz']; ?> Vakit)
+                        <br>
+                        <span style="color: #666; font-size: 14px; margin-left: 10px;">
+                            📿 <?php echo $raporlar[$i]['toplam_namaz']; ?> Vakit
+                            <?php if($raporlar[$i]['ilave_puan'] > 0): ?>
+                                <span style="color: #28a745; font-weight: 600;"> + <?php echo $raporlar[$i]['ilave_puan']; ?> İlave Puan</span>
+                            <?php endif; ?>
+                            <span style="color: #667eea; font-weight: bold; font-size: 16px;"> = <?php echo $raporlar[$i]['toplam_puan']; ?> Toplam Puan</span>
+                        </span>
+                        <br>
+                        <span style="color: #999; font-size: 12px; margin-left: 10px;">
+                            <?php
+                            $detaylar = [];
+                            if($raporlar[$i]['kendisi_sayisi'] > 0) {
+                                $detaylar[] = $raporlar[$i]['kendisi_sayisi'] . ' Kendisi';
+                            }
+                            if($raporlar[$i]['babasi_sayisi'] > 0) {
+                                $detaylar[] = $raporlar[$i]['babasi_sayisi'] . ' Babası';
+                            }
+                            if($raporlar[$i]['annesi_sayisi'] > 0) {
+                                $detaylar[] = $raporlar[$i]['annesi_sayisi'] . ' Annesi';
+                            }
+                            if($raporlar[$i]['anne_babasi_sayisi'] > 0) {
+                                $detaylar[] = $raporlar[$i]['anne_babasi_sayisi'] . ' Anne-Babası';
+                            }
+                            echo implode(' • ', $detaylar);
+                            ?>
+                        </span>
                     </p>
                     <?php endfor; ?>
                 </div>
