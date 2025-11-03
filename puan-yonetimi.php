@@ -115,18 +115,28 @@ $silinen_ilaveler_ders = $pdo->prepare("SELECT * FROM ilave_puan_silme_gecmisi W
 $silinen_ilaveler_ders->execute([$ogrenci_id]);
 $silinen_ilave_puanlar_ders = $silinen_ilaveler_ders->fetchAll();
 
-// İlave puan ekleme
+// İlave puan ekleme (pozitif veya negatif)
 if($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['ilave_puan_ekle'])) {
-    $puan = $_POST['puan'];
+    $puan = intval($_POST['puan']);
     $kategori = $_POST['kategori'];
-    $aciklama = $_POST['aciklama'];
+    $aciklama = trim($_POST['aciklama']);
     $tarih = $_POST['tarih'];
 
-    $stmt = $pdo->prepare("INSERT INTO ilave_puanlar (ogrenci_id, puan, kategori, aciklama, veren_kullanici, tarih) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([$ogrenci_id, $puan, $kategori, $aciklama, getLoggedInUser(), $tarih]);
-    $mesaj = "İlave puan başarıyla eklendi!";
-    header("Location: puan-yonetimi.php?id=$ogrenci_id");
-    exit;
+    // Açıklama kontrolü
+    if(empty($aciklama)) {
+        $mesaj = "Hata: Açıklama zorunludur!";
+    } else {
+        $stmt = $pdo->prepare("INSERT INTO ilave_puanlar (ogrenci_id, puan, kategori, aciklama, veren_kullanici, tarih) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$ogrenci_id, $puan, $kategori, $aciklama, getLoggedInUser(), $tarih]);
+
+        if($puan > 0) {
+            $mesaj = "✅ İlave puan (+{$puan}) başarıyla eklendi!";
+        } else {
+            $mesaj = "⚠️ Ceza puanı ({$puan}) başarıyla eklendi!";
+        }
+        header("Location: puan-yonetimi.php?id=$ogrenci_id");
+        exit;
+    }
 }
 
 $aktif_sayfa = 'puan';
@@ -142,9 +152,13 @@ require_once 'config/header.php';
                 </a>
             </div>
 
-            <!-- İlave Puan Ekle -->
-            <div style="background: #e8f5e9; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                <h3>➕ İlave Puan Ekle</h3>
+            <!-- İlave Puan Ekle / Ceza Puanı Ekle -->
+            <div style="background: linear-gradient(135deg, #e8f5e9 0%, #fff3cd 100%); padding: 20px; border-radius: 10px; margin: 20px 0; border: 2px solid #28a745;">
+                <h3>➕ İlave Puan Ekle / ⚠️ Ceza Puanı Ekle</h3>
+                <p style="color: #666; margin-bottom: 15px; font-size: 14px;">
+                    💡 <strong>İpucu:</strong> Ödül puanı için pozitif (+), ceza puanı için negatif (-) değer girin.
+                    <br>Örnek: <span style="color: #28a745;">+5</span> (ödül) veya <span style="color: #dc3545;">-3</span> (ceza)
+                </p>
                 <form method="POST" style="display: grid; gap: 15px; max-width: 600px;">
                     <div>
                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Kategori:</label>
@@ -154,10 +168,27 @@ require_once 'config/header.php';
                             <option value="Ders">📚 Ders</option>
                         </select>
                     </div>
-                    <input type="number" name="puan" placeholder="Puan miktarı" required min="1" style="padding: 10px; border-radius: 5px; border: 2px solid #ddd;">
-                    <input type="date" name="tarih" value="<?php echo date('Y-m-d'); ?>" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd;">
-                    <textarea name="aciklama" placeholder="Açıklama (opsiyonel)" rows="3" style="padding: 10px; border-radius: 5px; border: 2px solid #ddd;"></textarea>
-                    <button type="submit" name="ilave_puan_ekle" class="btn-primary" style="width: auto;">💾 Puan Ekle</button>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Puan Miktarı:</label>
+                        <input type="number" name="puan" placeholder="Pozitif (+5) veya Negatif (-3)" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%; font-size: 16px;">
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            Ödül için pozitif sayı (+5), ceza için negatif sayı (-3) girin
+                        </small>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Tarih:</label>
+                        <input type="date" name="tarih" value="<?php echo date('Y-m-d'); ?>" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Açıklama:</label>
+                        <textarea name="aciklama" placeholder="Örnek: Güzel davranış için ödül (+5) veya Kurallara uymadığı için ceza (-3)" rows="3" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;"></textarea>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            ⚠️ Açıklama zorunludur - özellikle ceza puanları için nedeni belirtiniz
+                        </small>
+                    </div>
+                    <button type="submit" name="ilave_puan_ekle" class="btn-primary" style="width: auto; padding: 12px 30px; font-size: 16px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        💾 Puanı Kaydet
+                    </button>
                 </form>
             </div>
 
@@ -197,17 +228,21 @@ require_once 'config/header.php';
                     foreach($ilave_puanlar_namaz as $ip):
                         $toplam_namaz_ilave += $ip['puan'];
                     ?>
-                    <tr id="ilave-puan-<?php echo $ip['id']; ?>">
+                    <tr id="ilave-puan-<?php echo $ip['id']; ?>" style="<?php echo $ip['puan'] < 0 ? 'background: #fff3cd;' : ''; ?>">
                         <td><?php echo date('d.m.Y', strtotime($ip['tarih'])); ?></td>
-                        <td><strong style="color: #28a745;">+<?php echo $ip['puan']; ?></strong></td>
+                        <td><strong style="color: <?php echo $ip['puan'] < 0 ? '#dc3545' : '#28a745'; ?>;">
+                            <?php echo $ip['puan'] > 0 ? '+' : ''; ?><?php echo $ip['puan']; ?>
+                        </strong></td>
                         <td><?php echo htmlspecialchars($ip['aciklama']); ?></td>
                         <td><?php echo $ip['veren_kullanici']; ?></td>
                         <td><button onclick="ilavePuanSil(<?php echo $ip['id']; ?>)" class="btn-sm btn-delete">🗑️ Sil</button></td>
                     </tr>
                     <?php endforeach; ?>
-                    <tr style="background: #d4edda; font-weight: bold;">
+                    <tr style="background: <?php echo $toplam_namaz_ilave < 0 ? '#fff3cd' : '#d4edda'; ?>; font-weight: bold;">
                         <td colspan="4" style="text-align: right; padding: 10px;">Toplam İlave Namaz Puanı:</td>
-                        <td style="color: #28a745; font-size: 18px;">+<?php echo $toplam_namaz_ilave; ?></td>
+                        <td style="color: <?php echo $toplam_namaz_ilave < 0 ? '#dc3545' : '#28a745'; ?>; font-size: 18px;">
+                            <?php echo $toplam_namaz_ilave > 0 ? '+' : ''; ?><?php echo $toplam_namaz_ilave; ?>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -246,17 +281,21 @@ require_once 'config/header.php';
                     foreach($ilave_puanlar_ders as $ip):
                         $toplam_ders_ilave += $ip['puan'];
                     ?>
-                    <tr id="ilave-puan-<?php echo $ip['id']; ?>">
+                    <tr id="ilave-puan-<?php echo $ip['id']; ?>" style="<?php echo $ip['puan'] < 0 ? 'background: #fff3cd;' : ''; ?>">
                         <td><?php echo date('d.m.Y', strtotime($ip['tarih'])); ?></td>
-                        <td><strong style="color: #007bff;">+<?php echo $ip['puan']; ?></strong></td>
+                        <td><strong style="color: <?php echo $ip['puan'] < 0 ? '#dc3545' : '#007bff'; ?>;">
+                            <?php echo $ip['puan'] > 0 ? '+' : ''; ?><?php echo $ip['puan']; ?>
+                        </strong></td>
                         <td><?php echo htmlspecialchars($ip['aciklama']); ?></td>
                         <td><?php echo $ip['veren_kullanici']; ?></td>
                         <td><button onclick="ilavePuanSil(<?php echo $ip['id']; ?>)" class="btn-sm btn-delete">🗑️ Sil</button></td>
                     </tr>
                     <?php endforeach; ?>
-                    <tr style="background: #cce5ff; font-weight: bold;">
+                    <tr style="background: <?php echo $toplam_ders_ilave < 0 ? '#fff3cd' : '#cce5ff'; ?>; font-weight: bold;">
                         <td colspan="4" style="text-align: right; padding: 10px;">Toplam İlave Ders Puanı:</td>
-                        <td style="color: #007bff; font-size: 18px;">+<?php echo $toplam_ders_ilave; ?></td>
+                        <td style="color: <?php echo $toplam_ders_ilave < 0 ? '#dc3545' : '#007bff'; ?>; font-size: 18px;">
+                            <?php echo $toplam_ders_ilave > 0 ? '+' : ''; ?><?php echo $toplam_ders_ilave; ?>
+                        </td>
                     </tr>
                 </tbody>
             </table>
