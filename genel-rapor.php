@@ -15,8 +15,11 @@ $aylikRapor = $pdo->prepare("
         COALESCE(SUM(CASE WHEN n.kiminle_geldi = 'Annesi' THEN 1 ELSE 0 END), 0) as annesi_sayisi,
         COALESCE(SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END), 0) as anne_babasi_sayisi,
         COALESCE(COUNT(n.id), 0) as toplam_namaz,
-        COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_puan,
-        (COALESCE(COUNT(n.id), 0) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0)) as toplam_puan
+        COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_namaz_puan,
+        COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_ders_puan,
+        (COALESCE(COUNT(n.id), 0) +
+         COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+         COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0)) as toplam_puan
     FROM
         ogrenciler o
         LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
@@ -27,7 +30,7 @@ $aylikRapor = $pdo->prepare("
     ORDER BY
         toplam_puan DESC, toplam_namaz DESC, o.ad_soyad
 ");
-$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay]);
+$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
 $raporlar = $aylikRapor->fetchAll();
 
 $toplamVakit = 0;
@@ -254,7 +257,8 @@ require_once 'config/header.php';
                             <th>Annesi</th>
                             <th>Anne-Babası</th>
                             <th>Toplam Vakit</th>
-                            <th>İlave Puan</th>
+                            <th>İlave Namaz Puanı</th>
+                            <th>İlave Ders Puanı</th>
                             <th>Toplam Puan</th>
                         </tr>
                     </thead>
@@ -272,7 +276,8 @@ require_once 'config/header.php';
                             <td><?php echo $rapor['annesi_sayisi']; ?></td>
                             <td><?php echo $rapor['anne_babasi_sayisi']; ?></td>
                             <td><?php echo $rapor['toplam_namaz']; ?></td>
-                            <td style="color: #28a745; font-weight: bold;"><?php echo $rapor['ilave_puan'] > 0 ? '+' . $rapor['ilave_puan'] : '0'; ?></td>
+                            <td style="color: #28a745; font-weight: bold;"><?php echo $rapor['ilave_namaz_puan'] > 0 ? '+' . $rapor['ilave_namaz_puan'] : '0'; ?></td>
+                            <td style="color: #2196F3; font-weight: bold;"><?php echo $rapor['ilave_ders_puan'] > 0 ? '+' . $rapor['ilave_ders_puan'] : '0'; ?></td>
                             <td class="toplam" style="background: #e8f5e9; font-weight: bold; font-size: 16px;"><?php echo $rapor['toplam_puan']; ?></td>
                         </tr>
                         <?php endforeach; ?>

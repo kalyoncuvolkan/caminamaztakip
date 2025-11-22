@@ -151,42 +151,57 @@ if($ay) {
     $ozetStmt->execute([$ogrenci_id, $yil]);
     $ozetRapor = $ozetStmt->fetch();
     
-    // Öğrencinin toplam puanını hesapla (namaz + ilave puan)
+    // Öğrencinin toplam puanını hesapla (namaz + ilave namaz puan + ilave ders puan)
     $ilavePuanStmt = $pdo->prepare("
-        SELECT COALESCE(SUM(puan), 0) as ilave_puan
+        SELECT
+            COALESCE(SUM(CASE WHEN kategori = 'Namaz' THEN puan ELSE 0 END), 0) as ilave_namaz_puan,
+            COALESCE(SUM(CASE WHEN kategori = 'Ders' THEN puan ELSE 0 END), 0) as ilave_ders_puan
         FROM ilave_puanlar
-        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND kategori = 'Namaz'
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ?
     ");
     $ilavePuanStmt->execute([$ogrenci_id, $yil]);
-    $ilavePuan = $ilavePuanStmt->fetchColumn();
-    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
+    $ilavePuanlar = $ilavePuanStmt->fetch();
+    $ilaveNamazPuan = $ilavePuanlar['ilave_namaz_puan'] ?? 0;
+    $ilaveDersPuan = $ilavePuanlar['ilave_ders_puan'] ?? 0;
+    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $ilaveDersPuan;
 
-    // İlave puan detaylarını çek
-    $ilavePuanDetayStmt = $pdo->prepare("
+    // İlave namaz puan detaylarını çek
+    $ilaveNamazPuanDetayStmt = $pdo->prepare("
         SELECT puan, aciklama, tarih
         FROM ilave_puanlar
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND kategori = 'Namaz'
         ORDER BY tarih DESC
     ");
-    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil]);
-    $ilavePuanDetaylar = $ilavePuanDetayStmt->fetchAll();
+    $ilaveNamazPuanDetayStmt->execute([$ogrenci_id, $yil]);
+    $ilaveNamazPuanDetaylar = $ilaveNamazPuanDetayStmt->fetchAll();
 
-    // Sıralama hesaplama (yillik_ozetler VIEW ile aynı mantık)
+    // İlave ders puan detaylarını çek
+    $ilaveDersPuanDetayStmt = $pdo->prepare("
+        SELECT puan, aciklama, tarih
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND kategori = 'Ders'
+        ORDER BY tarih DESC
+    ");
+    $ilaveDersPuanDetayStmt->execute([$ogrenci_id, $yil]);
+    $ilaveDersPuanDetaylar = $ilaveDersPuanDetayStmt->fetchAll();
+
+    // Sıralama hesaplama (namaz + ilave namaz + ilave ders puanları dahil)
     $siralamaStmt = $pdo->prepare("
         SELECT COUNT(*) + 1 as sira
         FROM (
             SELECT
                 o.id,
                 COUNT(n.id) as toplam_namaz,
-                (COUNT(n.id) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                    WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND kategori = 'Namaz'), 0)) as toplam_puan
+                (COUNT(n.id) +
+                 COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND kategori = 'Namaz'), 0) +
+                 COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND kategori = 'Ders'), 0)) as toplam_puan
             FROM ogrenciler o
             LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id AND YEAR(n.tarih) = ?
             GROUP BY o.id
         ) as temp
         WHERE toplam_puan > ? OR (toplam_puan = ? AND toplam_namaz > ?)
     ");
-    $siralamaStmt->execute([$yil, $yil, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
+    $siralamaStmt->execute([$yil, $yil, $yil, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
     $siralama = $siralamaStmt->fetchColumn();
 
     // Toplam öğrenci sayısı
@@ -553,10 +568,19 @@ require_once 'config/header.php';
                         <span class="etiket">Toplam Vakit:</span>
                         <span class="deger"><?php echo $ozetRapor['toplam'] ?? 0; ?></span>
                     </div>
-                    <div class="ozet-kutu" style="background: #d4edda; border: 2px solid #28a745; cursor: pointer;" onclick="toggleIlavePuanDetay()">
-                        <span class="etiket">İlave Puan:</span>
-                        <span class="deger" style="color: #28a745;">+<?php echo $ilavePuan ?? 0; ?></span>
-                        <?php if(!empty($ilavePuanDetaylar)): ?>
+                    <div class="ozet-kutu" style="background: #d4edda; border: 2px solid #28a745; cursor: pointer;" onclick="toggleIlaveNamazPuanDetay()">
+                        <span class="etiket">İlave Namaz Puanı:</span>
+                        <span class="deger" style="color: #28a745;">+<?php echo $ilaveNamazPuan ?? 0; ?></span>
+                        <?php if(!empty($ilaveNamazPuanDetaylar)): ?>
+                        <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
+                            ▼ Detay için tıklayın
+                        </small>
+                        <?php endif; ?>
+                    </div>
+                    <div class="ozet-kutu" style="background: #e3f2fd; border: 2px solid #2196F3; cursor: pointer;" onclick="toggleIlaveDersPuanDetay()">
+                        <span class="etiket">İlave Ders Puanı:</span>
+                        <span class="deger" style="color: #2196F3;">+<?php echo $ilaveDersPuan ?? 0; ?></span>
+                        <?php if(!empty($ilaveDersPuanDetaylar)): ?>
                         <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
                             ▼ Detay için tıklayın
                         </small>
@@ -568,9 +592,9 @@ require_once 'config/header.php';
                     </div>
                 </div>
 
-                <?php if(!empty($ilavePuanDetaylar)): ?>
-                <div id="ilavePuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #28a745;">
-                    <h4 style="margin-top: 0; color: #28a745;"><span class="no-print">💰 </span>İlave Puan Detayları</h4>
+                <?php if(!empty($ilaveNamazPuanDetaylar)): ?>
+                <div id="ilaveNamazPuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #28a745;">
+                    <h4 style="margin-top: 0; color: #28a745;"><span class="no-print">💰 </span>İlave Namaz Puanı Detayları</h4>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #28a745; color: white;">
@@ -580,7 +604,7 @@ require_once 'config/header.php';
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($ilavePuanDetaylar as $detay): ?>
+                            <?php foreach($ilaveNamazPuanDetaylar as $detay): ?>
                             <tr style="border-bottom: 1px solid #ddd;<?php if($detay['puan'] < 0) echo ' background: #fff3cd;'; ?>">
                                 <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
                                 <td style="padding: 10px;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
@@ -594,7 +618,41 @@ require_once 'config/header.php';
                             <tr style="background: #e8f5e9; font-weight: bold;">
                                 <td colspan="2" style="padding: 10px; text-align: right;">TOPLAM:</td>
                                 <td style="padding: 10px; text-align: center; color: #28a745; font-size: 1.2em;">
-                                    +<?php echo $ilavePuan; ?>
+                                    +<?php echo $ilaveNamazPuan; ?>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <?php endif; ?>
+
+                <?php if(!empty($ilaveDersPuanDetaylar)): ?>
+                <div id="ilaveDersPuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #2196F3;">
+                    <h4 style="margin-top: 0; color: #2196F3;"><span class="no-print">📚 </span>İlave Ders Puanı Detayları</h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #2196F3; color: white;">
+                                <th style="padding: 10px; text-align: left;">Tarih</th>
+                                <th style="padding: 10px; text-align: left;">Açıklama</th>
+                                <th style="padding: 10px; text-align: center;">Puan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($ilaveDersPuanDetaylar as $detay): ?>
+                            <tr style="border-bottom: 1px solid #ddd;<?php if($detay['puan'] < 0) echo ' background: #fff3cd;'; ?>">
+                                <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
+                                <td style="padding: 10px;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; color: <?php echo $detay['puan'] < 0 ? '#dc3545' : '#2196F3'; ?>;">
+                                    <?php echo $detay['puan'] > 0 ? '+' : ''; ?><?php echo $detay['puan']; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #e3f2fd; font-weight: bold;">
+                                <td colspan="2" style="padding: 10px; text-align: right;">TOPLAM:</td>
+                                <td style="padding: 10px; text-align: center; color: #2196F3; font-size: 1.2em;">
+                                    +<?php echo $ilaveDersPuan; ?>
                                 </td>
                             </tr>
                         </tfoot>
@@ -627,8 +685,8 @@ require_once 'config/header.php';
         </div>
 
     <script>
-        function toggleIlavePuanDetay() {
-            const detayDiv = document.getElementById('ilavePuanDetayDiv');
+        function toggleIlaveNamazPuanDetay() {
+            const detayDiv = document.getElementById('ilaveNamazPuanDetayDiv');
             if (detayDiv) {
                 if (detayDiv.style.display === 'none') {
                     detayDiv.style.display = 'block';
@@ -638,20 +696,40 @@ require_once 'config/header.php';
             }
         }
 
-        // Yazdırma öncesi ilave puan detayını göster
-        window.addEventListener('beforeprint', function() {
-            const detayDiv = document.getElementById('ilavePuanDetayDiv');
+        function toggleIlaveDersPuanDetay() {
+            const detayDiv = document.getElementById('ilaveDersPuanDetayDiv');
             if (detayDiv) {
-                detayDiv.setAttribute('data-was-hidden', detayDiv.style.display === 'none' ? 'true' : 'false');
-                detayDiv.style.display = 'block';
+                if (detayDiv.style.display === 'none') {
+                    detayDiv.style.display = 'block';
+                } else {
+                    detayDiv.style.display = 'none';
+                }
+            }
+        }
+
+        // Yazdırma öncesi ilave puan detaylarını göster
+        window.addEventListener('beforeprint', function() {
+            const namazDetayDiv = document.getElementById('ilaveNamazPuanDetayDiv');
+            if (namazDetayDiv) {
+                namazDetayDiv.setAttribute('data-was-hidden', namazDetayDiv.style.display === 'none' ? 'true' : 'false');
+                namazDetayDiv.style.display = 'block';
+            }
+            const dersDetayDiv = document.getElementById('ilaveDersPuanDetayDiv');
+            if (dersDetayDiv) {
+                dersDetayDiv.setAttribute('data-was-hidden', dersDetayDiv.style.display === 'none' ? 'true' : 'false');
+                dersDetayDiv.style.display = 'block';
             }
         });
 
         // Yazdırma sonrası önceki duruma döndür
         window.addEventListener('afterprint', function() {
-            const detayDiv = document.getElementById('ilavePuanDetayDiv');
-            if (detayDiv && detayDiv.getAttribute('data-was-hidden') === 'true') {
-                detayDiv.style.display = 'none';
+            const namazDetayDiv = document.getElementById('ilaveNamazPuanDetayDiv');
+            if (namazDetayDiv && namazDetayDiv.getAttribute('data-was-hidden') === 'true') {
+                namazDetayDiv.style.display = 'none';
+            }
+            const dersDetayDiv = document.getElementById('ilaveDersPuanDetayDiv');
+            if (dersDetayDiv && dersDetayDiv.getAttribute('data-was-hidden') === 'true') {
+                dersDetayDiv.style.display = 'none';
             }
         });
     </script>

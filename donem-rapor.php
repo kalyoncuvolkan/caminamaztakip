@@ -151,7 +151,7 @@ if($format == 'excel') {
     echo '<tr style="background: #d4edda;"><th colspan="2">Tamamlanan Ders:</th><td colspan="4">' . ($stats['tamamlanan'] ?? 0) . '</td></tr>';
     echo '<tr style="background: #f8d7da;"><th colspan="2">Bekleyen Ders:</th><td colspan="4">' . ($stats['bekleyen'] ?? 0) . '</td></tr>';
     echo '<tr style="background: #cce5ff;"><th colspan="2">Ders Puanı:</th><td colspan="4">' . ($stats['toplam_puan'] ?? 0) . '</td></tr>';
-    echo '<tr style="background: #cce5ff;"><th colspan="2">İlave Puan:</th><td colspan="4">+' . $ilave_puan_toplam . '</td></tr>';
+    echo '<tr style="background: #e3f2fd;"><th colspan="2">İlave Ders Puanı:</th><td colspan="4" style="color: #2196F3; font-weight: bold;">+' . $ilave_puan_toplam . '</td></tr>';
     echo '<tr style="background: #fff3cd; font-weight: bold;"><th colspan="2">TOPLAM PUAN:</th><td colspan="4">' . $toplam_ders_puani . '</td></tr>';
     echo '<tr style="background: #e8f5e9; font-weight: bold;"><th colspan="2">SIRALAMA:</th><td colspan="4">' . $siralama . ' / ' . $toplam_ogrenci . '</td></tr>';
     echo '<tr><td colspan="6">&nbsp;</td></tr>';
