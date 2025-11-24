@@ -603,6 +603,7 @@ require_once 'config/header.php';
                 </div>
             </form>
 
+            <div class="rapor-icerik">
             <div class="rapor-baslik">
                 <h3><?php echo $raporBaslik; ?></h3>
             </div>
@@ -670,7 +671,6 @@ require_once 'config/header.php';
                 </table>
             </div>
 
-            <div class="rapor-icerik">
             <div class="rapor-ozet">
                 <h4><span class="no-print">📊 </span>Özet Bilgiler</h4>
                 <div class="ozet-kutular">
