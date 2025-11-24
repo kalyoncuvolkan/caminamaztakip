@@ -367,10 +367,98 @@ require_once 'config/header.php';
                 display: block !important;
             }
 
-            /* Sayfa ayarları */
+            /* Karne print optimizasyonu - tek sayfaya sığdır */
+            #karneDiv > div {
+                padding: 15px !important;
+                margin: 0 !important;
+            }
+
+            /* Başlık küçült */
+            #karneDiv h1 {
+                font-size: 20px !important;
+                margin: 0 0 5px 0 !important;
+            }
+
+            #karneDiv h2 {
+                font-size: 18px !important;
+                margin: 5px 0 !important;
+            }
+
+            #karneDiv h3 {
+                font-size: 14px !important;
+                margin: 3px 0 !important;
+            }
+
+            /* Başlık bölümü */
+            #karneDiv > div > div:first-child {
+                padding-bottom: 10px !important;
+                margin-bottom: 10px !important;
+                border-bottom-width: 2px !important;
+            }
+
+            /* Kartlar arası boşluk azalt */
+            #karneDiv > div > div:not(:first-child) {
+                margin-bottom: 12px !important;
+                padding: 10px !important;
+                border-width: 2px !important;
+            }
+
+            /* Tablo içi boşluklar */
+            #karneDiv table td {
+                padding: 5px 8px !important;
+                font-size: 13px !important;
+            }
+
+            /* Toplam satırları */
+            #karneDiv table tr:last-child td {
+                padding: 8px !important;
+                font-size: 14px !important;
+            }
+
+            /* Kart başlıkları */
+            #karneDiv > div > div > h3 {
+                font-size: 16px !important;
+                margin: 0 0 8px 0 !important;
+                padding-bottom: 5px !important;
+            }
+
+            /* Sıralama kutusu */
+            #karneDiv > div > div:nth-last-child(2) {
+                padding: 15px !important;
+                margin-bottom: 12px !important;
+            }
+
+            #karneDiv > div > div:nth-last-child(2) p {
+                font-size: 18px !important;
+            }
+
+            /* İmza bölümü */
+            #karneDiv > div > div:last-child {
+                margin-top: 15px !important;
+                padding-top: 10px !important;
+            }
+
+            #karneDiv > div > div:last-child p {
+                margin: 5px 0 !important;
+            }
+
+            #karneDiv > div > div:last-child p:first-child {
+                font-size: 14px !important;
+                margin: 10px 0 5px 0 !important;
+            }
+
+            #karneDiv > div > div:last-child p:nth-child(2) {
+                font-size: 13px !important;
+            }
+
+            #karneDiv > div > div:last-child p:last-child {
+                font-size: 11px !important;
+            }
+
+            /* Sayfa ayarları - küçült */
             @page {
                 size: A4;
-                margin: 15mm;
+                margin: 10mm;
             }
 
             body {
