@@ -332,17 +332,75 @@ $aylar = [
     }
 
     @media print {
+        /* Header, menü ve form panelini gizle */
+        header,
+        nav,
         .secim-panel,
-        .yazdir-btn {
+        .yazdir-btn,
+        .no-print {
             display: none !important;
         }
 
-        .hediye-container {
-            padding: 20px;
+        /* Body ve container ayarları */
+        body {
+            margin: 0;
+            padding: 0;
         }
 
+        .container {
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+
+        .hediye-container {
+            padding: 20px !important;
+            max-width: 100% !important;
+        }
+
+        /* Sonuç paneli */
+        .sonuc-panel {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+        }
+
+        .sonuc-baslik {
+            border-bottom: 2px solid #333 !important;
+        }
+
+        /* Tablo optimizasyonu */
         .sonuc-tablo {
             page-break-inside: avoid;
+            width: 100% !important;
+        }
+
+        .sonuc-tablo thead {
+            background: #333 !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .sonuc-tablo th {
+            border: 1px solid #333 !important;
+        }
+
+        .sonuc-tablo td {
+            border: 1px solid #ddd !important;
+        }
+
+        /* Renkli elementleri print uyumlu yap */
+        .siralama,
+        .odul-badge,
+        .toplam-odul {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Sayfa ayarları */
+        @page {
+            size: A4;
+            margin: 15mm;
         }
     }
 </style>
