@@ -98,6 +98,9 @@ $ilave_puanlar_namaz = $ilaveler_namaz->fetchAll();
 // İlave puanlar - Ders
 $ilaveler_ders = $pdo->prepare("SELECT * FROM ilave_puanlar WHERE ogrenci_id = ? AND kategori = 'Ders' ORDER BY tarih DESC");
 $ilaveler_ders->execute([$ogrenci_id]);
+
+// Ön tanımlı puan şablonlarını çek
+$puan_sablonlari = $pdo->query("SELECT * FROM puan_sablon WHERE aktif = 1 ORDER BY kategori, sira, baslik")->fetchAll();
 $ilave_puanlar_ders = $ilaveler_ders->fetchAll();
 
 // Silinen namaz kayıtları
@@ -159,10 +162,36 @@ require_once 'config/header.php';
                     💡 <strong>İpucu:</strong> Ödül puanı için pozitif (+), ceza puanı için negatif (-) değer girin.
                     <br>Örnek: <span style="color: #28a745;">+5</span> (ödül) veya <span style="color: #dc3545;">-3</span> (ceza)
                 </p>
-                <form method="POST" style="display: grid; gap: 15px; max-width: 600px;">
+                <form method="POST" style="display: grid; gap: 15px; max-width: 600px;" id="puanForm">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ön Tanımlı Puan Seç (İsteğe Bağlı):</label>
+                        <select id="puanSablon" style="padding: 10px; border-radius: 5px; border: 2px solid #667eea; width: 100%; font-weight: 600; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                            <option value="">-- Veya Manuel Gir --</option>
+                            <?php
+                            $onceki_kategori = '';
+                            foreach($puan_sablonlari as $sablon):
+                                if($onceki_kategori != $sablon['kategori']) {
+                                    if($onceki_kategori != '') echo '</optgroup>';
+                                    echo '<optgroup label="' . ($sablon['kategori'] == 'Namaz' ? '🕌 Namaz' : '📚 Ders') . '">';
+                                    $onceki_kategori = $sablon['kategori'];
+                                }
+                            ?>
+                                <option value='<?php echo json_encode(['kategori' => $sablon['kategori'], 'puan' => $sablon['puan'], 'aciklama' => $sablon['baslik']]); ?>'>
+                                    <?php echo $sablon['baslik']; ?> (<?php echo $sablon['puan'] > 0 ? '+' : ''; ?><?php echo $sablon['puan']; ?> puan)
+                                </option>
+                            <?php endforeach; ?>
+                            <?php if($onceki_kategori != '') echo '</optgroup>'; ?>
+                        </select>
+                        <small style="color: #666; display: block; margin-top: 5px;">
+                            💡 Hızlı işlem için hazır puan şablonlarından birini seçin
+                        </small>
+                    </div>
+                    <div style="border-top: 2px dashed #ddd; padding-top: 15px;">
+                        <small style="color: #999; display: block; margin-bottom: 10px; text-align: center;">VEYA MANUEL GİRİŞ YAP</small>
+                    </div>
                     <div>
                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Kategori:</label>
-                        <select name="kategori" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;">
+                        <select name="kategori" id="kategoriSelect" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;">
                             <option value="">Kategori Seçin</option>
                             <option value="Namaz" selected>🕌 Namaz</option>
                             <option value="Ders">📚 Ders</option>
@@ -170,7 +199,7 @@ require_once 'config/header.php';
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Puan Miktarı:</label>
-                        <input type="number" name="puan" placeholder="Pozitif (+5) veya Negatif (-3)" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%; font-size: 16px;">
+                        <input type="number" name="puan" id="puanInput" placeholder="Pozitif (+5) veya Negatif (-3)" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%; font-size: 16px;">
                         <small style="color: #666; display: block; margin-top: 5px;">
                             Ödül için pozitif sayı (+5), ceza için negatif sayı (-3) girin
                         </small>
@@ -181,7 +210,7 @@ require_once 'config/header.php';
                     </div>
                     <div>
                         <label style="display: block; margin-bottom: 5px; font-weight: 600;">Açıklama:</label>
-                        <textarea name="aciklama" placeholder="Örnek: Güzel davranış için ödül (+5) veya Kurallara uymadığı için ceza (-3)" rows="3" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;"></textarea>
+                        <textarea name="aciklama" id="aciklamaInput" placeholder="Örnek: Güzel davranış için ödül (+5) veya Kurallara uymadığı için ceza (-3)" rows="3" required style="padding: 10px; border-radius: 5px; border: 2px solid #ddd; width: 100%;"></textarea>
                         <small style="color: #666; display: block; margin-top: 5px;">
                             ⚠️ Açıklama zorunludur - özellikle ceza puanları için nedeni belirtiniz
                         </small>
@@ -190,6 +219,29 @@ require_once 'config/header.php';
                         💾 Puanı Kaydet
                     </button>
                 </form>
+
+                <script>
+                // Ön tanımlı puan seçildiğinde form alanlarını doldur
+                document.getElementById('puanSablon').addEventListener('change', function() {
+                    if(this.value) {
+                        const data = JSON.parse(this.value);
+                        document.getElementById('kategoriSelect').value = data.kategori;
+                        document.getElementById('puanInput').value = data.puan;
+                        document.getElementById('aciklamaInput').value = data.aciklama;
+
+                        // Form alanlarını vurgula
+                        document.getElementById('kategoriSelect').style.border = '2px solid #28a745';
+                        document.getElementById('puanInput').style.border = '2px solid #28a745';
+                        document.getElementById('aciklamaInput').style.border = '2px solid #28a745';
+
+                        setTimeout(() => {
+                            document.getElementById('kategoriSelect').style.border = '2px solid #ddd';
+                            document.getElementById('puanInput').style.border = '2px solid #ddd';
+                            document.getElementById('aciklamaInput').style.border = '2px solid #ddd';
+                        }, 1000);
+                    }
+                });
+                </script>
             </div>
 
             <!-- Namaz Kayıtları -->
