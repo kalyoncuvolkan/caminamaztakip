@@ -115,6 +115,7 @@
                     <a href="ogrenciler.php" class="<?php echo ($aktif_sayfa ?? '') == 'ogrenciler' ? 'active' : ''; ?>">👥 Öğrenciler</a>
                     <a href="namaz-ekle-yeni.php" class="<?php echo ($aktif_sayfa ?? '') == 'namaz' ? 'active' : ''; ?>">🕌 Namaz Ekle</a>
                     <a href="puan-yonetimi.php" class="<?php echo ($aktif_sayfa ?? '') == 'puan' ? 'active' : ''; ?>">⭐ Puan Yönetimi</a>
+                    <a href="puan-sablonlari.php" class="<?php echo ($aktif_sayfa ?? '') == 'puan-sablon' ? 'active' : ''; ?>">⚙️ Puan Şablonları</a>
                     <a href="ders-kategorileri.php" class="<?php echo ($aktif_sayfa ?? '') == 'dersler' ? 'active' : ''; ?>">📚 Dersler</a>
                     <a href="sertifikalar.php" class="<?php echo ($aktif_sayfa ?? '') == 'sertifikalar' ? 'active' : ''; ?>">📜 Sertifikalar</a>
                     <a href="mesajlar.php" class="<?php echo ($aktif_sayfa ?? '') == 'mesajlar' ? 'active' : ''; ?>">💬 Mesajlar</a>
