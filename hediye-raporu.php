@@ -29,15 +29,14 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
             SELECT
                 o.id,
                 o.ad_soyad,
-                o.sinif,
                 COUNT(n.id) as toplam_namaz,
                 (COUNT(n.id) * ?) as odul_miktari
             FROM ogrenciler o
-            LEFT JOIN namazlar n ON o.id = n.ogrenci_id
+            LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
                 AND YEAR(n.tarih) = ?
                 AND MONTH(n.tarih) = ?
-            WHERE o.durum = 'Aktif'
-            GROUP BY o.id, o.ad_soyad, o.sinif
+            WHERE o.aktif = 1
+            GROUP BY o.id, o.ad_soyad
             HAVING toplam_namaz > 0
             ORDER BY toplam_namaz DESC
         ");
@@ -50,7 +49,6 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
             SELECT
                 o.id,
                 o.ad_soyad,
-                o.sinif,
                 COALESCE(SUM(ip.puan), 0) as ders_puani,
                 (COALESCE(SUM(ip.puan), 0) * ?) as odul_miktari
             FROM ogrenciler o
@@ -58,8 +56,8 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
                 AND ip.kategori = 'Ders'
                 AND YEAR(ip.tarih) = ?
                 AND MONTH(ip.tarih) = ?
-            WHERE o.durum = 'Aktif'
-            GROUP BY o.id, o.ad_soyad, o.sinif
+            WHERE o.aktif = 1
+            GROUP BY o.id, o.ad_soyad
             HAVING ders_puani > 0
             ORDER BY ders_puani DESC
         ");
@@ -72,7 +70,6 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
             SELECT
                 o.id,
                 o.ad_soyad,
-                o.sinif,
                 (
                     COALESCE(COUNT(DISTINCT n.id), 0) +
                     COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan > 0 THEN ip.puan ELSE 0 END), 0) +
@@ -87,14 +84,14 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
                     * ?
                 ) as odul_miktari
             FROM ogrenciler o
-            LEFT JOIN namazlar n ON o.id = n.ogrenci_id
+            LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
                 AND YEAR(n.tarih) = ?
                 AND MONTH(n.tarih) = ?
             LEFT JOIN ilave_puanlar ip ON o.id = ip.ogrenci_id
                 AND YEAR(ip.tarih) = ?
                 AND MONTH(ip.tarih) = ?
-            WHERE o.durum = 'Aktif'
-            GROUP BY o.id, o.ad_soyad, o.sinif
+            WHERE o.aktif = 1
+            GROUP BY o.id, o.ad_soyad
             HAVING toplam_puan > 0
             ORDER BY toplam_puan DESC
         ");
@@ -423,7 +420,6 @@ $aylar = [
                 <tr>
                     <th style="width: 60px;">Sıra</th>
                     <th>Öğrenci Adı</th>
-                    <th>Sınıf</th>
                     <th>
                         <?php
                         if ($hesaplama_turu === 'vakite_gore') echo 'Toplam Namaz';
@@ -442,7 +438,6 @@ $aylar = [
                 <tr>
                     <td><span class="siralama"><?php echo $sira++; ?></span></td>
                     <td style="font-weight: 600;"><?php echo htmlspecialchars($sonuc['ad_soyad']); ?></td>
-                    <td><?php echo htmlspecialchars($sonuc['sinif']); ?></td>
                     <td style="font-weight: bold; color: #667eea;">
                         <?php
                         if ($hesaplama_turu === 'vakite_gore') echo $sonuc['toplam_namaz'];
