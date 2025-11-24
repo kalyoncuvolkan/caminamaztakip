@@ -61,18 +61,22 @@ if($ay) {
     $ozetStmt->execute([$ogrenci_id, $yil, $ay]);
     $ozetRapor = $ozetStmt->fetch();
     
-    // Öğrencinin toplam puanını hesapla (namaz + ilave puan)
+    // Öğrencinin toplam puanını hesapla (namaz + ilave namaz puan + ilave ders puan)
     $ilavePuanStmt = $pdo->prepare("
-        SELECT COALESCE(SUM(puan), 0) as ilave_puan
+        SELECT
+            COALESCE(SUM(CASE WHEN kategori = 'Namaz' THEN puan ELSE 0 END), 0) as ilave_namaz_puan,
+            COALESCE(SUM(CASE WHEN kategori = 'Ders' THEN puan ELSE 0 END), 0) as ilave_ders_puan
         FROM ilave_puanlar
-        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
     ");
     $ilavePuanStmt->execute([$ogrenci_id, $yil, $ay]);
-    $ilavePuan = $ilavePuanStmt->fetchColumn();
-    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
+    $ilavePuanlar = $ilavePuanStmt->fetch();
+    $ilaveNamazPuan = $ilavePuanlar['ilave_namaz_puan'] ?? 0;
+    $ilaveDersPuan = $ilavePuanlar['ilave_ders_puan'] ?? 0;
+    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $ilaveDersPuan;
 
-    // İlave puan detaylarını çek (hem eklenmiş hem silinmiş puanlar)
-    $ilavePuanDetayStmt = $pdo->prepare("
+    // İlave namaz puan detaylarını çek (hem eklenmiş hem silinmiş puanlar)
+    $ilaveNamazPuanDetayStmt = $pdo->prepare("
         SELECT puan, aciklama, tarih, 'eklendi' as durum
         FROM ilave_puanlar
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
@@ -82,18 +86,33 @@ if($ay) {
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
         ORDER BY tarih DESC
     ");
-    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
-    $ilavePuanDetaylar = $ilavePuanDetayStmt->fetchAll();
+    $ilaveNamazPuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
+    $ilaveNamazPuanDetaylar = $ilaveNamazPuanDetayStmt->fetchAll();
 
-    // Sıralama hesaplama (aylik_ozetler VIEW ile aynı mantık)
+    // İlave ders puan detaylarını çek
+    $ilaveDersPuanDetayStmt = $pdo->prepare("
+        SELECT puan, aciklama, tarih, 'eklendi' as durum
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Ders'
+        UNION ALL
+        SELECT -puan as puan, CONCAT(aciklama, ' (Silindi: ', silme_nedeni, ')') as aciklama, tarih, 'silindi' as durum
+        FROM ilave_puan_silme_gecmisi
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Ders'
+        ORDER BY tarih DESC
+    ");
+    $ilaveDersPuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
+    $ilaveDersPuanDetaylar = $ilaveDersPuanDetayStmt->fetchAll();
+
+    // Sıralama hesaplama (namaz + ilave namaz + ilave ders puanları dahil)
     $siralamaStmt = $pdo->prepare("
         SELECT COUNT(*) + 1 as sira
         FROM (
             SELECT
                 o.id,
                 COUNT(n.id) as toplam_namaz,
-                (COUNT(n.id) + COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                    WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'), 0)) as toplam_puan
+                (COUNT(n.id) +
+                 COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'), 0) +
+                 COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Ders'), 0)) as toplam_puan
             FROM ogrenciler o
             LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
                 AND YEAR(n.tarih) = ? AND MONTH(n.tarih) = ?
@@ -101,7 +120,7 @@ if($ay) {
         ) as temp
         WHERE toplam_puan > ? OR (toplam_puan = ? AND toplam_namaz > ?)
     ");
-    $siralamaStmt->execute([$yil, $ay, $yil, $ay, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
+    $siralamaStmt->execute([$yil, $ay, $yil, $ay, $yil, $ay, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
     $siralama = $siralamaStmt->fetchColumn();
 
     // Toplam öğrenci sayısı
