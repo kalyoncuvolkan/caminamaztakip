@@ -122,16 +122,17 @@ $siralama_query = $pdo->prepare("
 
 // Öğrencinin yıllık toplam puanını hesapla
 $yillik_toplam_query = $pdo->prepare("
-    (SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
-     FROM ogrenci_dersler od
-     JOIN dersler d ON od.ders_id = d.id
-     WHERE od.ogrenci_id = ?
-         AND YEAR(od.atama_tarihi) = ?) +
-    COALESCE((SELECT SUM(puan)
-              FROM ilave_puanlar
-              WHERE ogrenci_id = ?
-                  AND kategori = 'Ders'
-                  AND YEAR(tarih) = ?), 0)
+    SELECT
+        COALESCE((SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
+                  FROM ogrenci_dersler od
+                  JOIN dersler d ON od.ders_id = d.id
+                  WHERE od.ogrenci_id = ?
+                      AND YEAR(od.atama_tarihi) = ?), 0) +
+        COALESCE((SELECT SUM(puan)
+                  FROM ilave_puanlar
+                  WHERE ogrenci_id = ?
+                      AND kategori = 'Ders'
+                      AND YEAR(tarih) = ?), 0) as toplam
 ");
 $yillik_toplam_query->execute([$ogrenci_id, $yil, $ogrenci_id, $yil]);
 $yillik_toplam_puan = $yillik_toplam_query->fetchColumn() ?? 0;
