@@ -153,10 +153,41 @@ if($ay) {
     $dersPuanStmt->execute([$ogrenci_id, $yil, $ay]);
     $dersPuanDetaylar = $dersPuanStmt->fetchAll();
 
-    // Normal ders puanı toplamı
+    // Normal ders puanı toplamı ve ders sayısı
     $normalDersPuan = 0;
+    $verdigiDersSayisi = 0;
     foreach($dersPuanDetaylar as $ders) {
         $normalDersPuan += $ders['puan'];
+        $verdigiDersSayisi++;
+    }
+
+    // Öğrencinin toplam ders sayısını ve kalan ders sayısını çek
+    $toplamDersStmt = $pdo->prepare("
+        SELECT COUNT(*) as toplam_ders_sayisi,
+               SUM(CASE WHEN durum = 'Tamamlandi' THEN 1 ELSE 0 END) as tamamlanan,
+               SUM(CASE WHEN durum != 'Tamamlandi' THEN 1 ELSE 0 END) as kalan
+        FROM ogrenci_dersler
+        WHERE ogrenci_id = ?
+    ");
+    $toplamDersStmt->execute([$ogrenci_id]);
+    $dersBilgileri = $toplamDersStmt->fetch();
+    $toplamDersSayisi = $dersBilgileri['toplam_ders_sayisi'] ?? 0;
+    $kalanDersSayisi = $dersBilgileri['kalan'] ?? 0;
+
+    // Ders kategorisindeki ceza sayısı
+    $dersCezaSayisi = 0;
+    foreach($cezaPuanDetaylar ?? [] as $ceza) {
+        if($ceza['kategori'] == 'Ders') {
+            $dersCezaSayisi++;
+        }
+    }
+
+    // Namaz kategorisindeki ceza sayısı
+    $namazCezaSayisi = 0;
+    foreach($cezaPuanDetaylar ?? [] as $ceza) {
+        if($ceza['kategori'] == 'Namaz') {
+            $namazCezaSayisi++;
+        }
     }
 
     // Toplam puanı yeniden hesapla (normal ders puanı da dahil)
@@ -323,6 +354,11 @@ require_once 'config/header.php';
             /* Emojileri gizle */
             .no-print {
                 display: none !important;
+            }
+
+            /* Karne için özel CSS */
+            #karneDiv {
+                display: block !important;
             }
 
             /* Sayfa ayarları */
@@ -917,9 +953,169 @@ require_once 'config/header.php';
                     </p>
                 </div>
             </div>
-            
+
+            <!-- KARNE BÖLÜMÜ (Gizli) -->
+            <div id="karneDiv" style="display: none;">
+                <div style="max-width: 800px; margin: 0 auto; padding: 40px; background: white; font-family: 'Arial', sans-serif;">
+                    <!-- Başlık -->
+                    <div style="text-align: center; border-bottom: 4px solid #667eea; padding-bottom: 20px; margin-bottom: 30px;">
+                        <h1 style="color: #667eea; margin: 0; font-size: 28px;">KARNE</h1>
+                        <h2 style="color: #333; margin: 10px 0; font-size: 24px; text-transform: uppercase;">
+                            <?php echo $ogrenci['ad_soyad']; ?>
+                        </h2>
+                        <h3 style="color: #666; margin: 5px 0; font-size: 18px;">
+                            <?php echo $yil . ' ' . strtoupper(ayAdi($ay)) . ' AYI NAMAZ VE DERS RAPORU'; ?>
+                        </h3>
+                    </div>
+
+                    <!-- NAMAZLAR BÖLÜMÜ -->
+                    <div style="margin-bottom: 30px; border: 3px solid #28a745; border-radius: 10px; padding: 20px; background: #f8fff9;">
+                        <h3 style="color: #28a745; margin: 0 0 15px 0; font-size: 22px; text-align: center; border-bottom: 2px solid #28a745; padding-bottom: 10px;">
+                            🕌 NAMAZLAR
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>KENDİN:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #28a745;">
+                                    <?php echo $ozetRapor['kendisi'] ?? 0; ?> VAKİT
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>BABANLA:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #28a745;">
+                                    <?php echo $ozetRapor['babasi'] ?? 0; ?> VAKİT
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>ANNENLE:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #28a745;">
+                                    <?php echo $ozetRapor['annesi'] ?? 0; ?> VAKİT
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>ANNE + BABANLA:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #28a745;">
+                                    <?php echo $ozetRapor['anne_babasi'] ?? 0; ?> VAKİT
+                                </td>
+                            </tr>
+                            <?php if($namazCezaSayisi > 0): ?>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>ALDIĞIN CEZALAR:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #dc3545;">
+                                    <?php echo $namazCezaSayisi; ?> ADET
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                            <tr style="background: #e8f5e9;">
+                                <td style="padding: 15px; font-size: 18px;"><strong>TOPLAM:</strong></td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 20px; color: #28a745;">
+                                    <?php echo $ozetRapor['toplam'] ?? 0; ?> VAKİT
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- DERSLER BÖLÜMÜ -->
+                    <div style="margin-bottom: 30px; border: 3px solid #2196F3; border-radius: 10px; padding: 20px; background: #f8fbff;">
+                        <h3 style="color: #2196F3; margin: 0 0 15px 0; font-size: 22px; text-align: center; border-bottom: 2px solid #2196F3; padding-bottom: 10px;">
+                            📚 DERSLER
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>TOPLAM DERSİN:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #2196F3;">
+                                    <?php echo $toplamDersSayisi; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>VERDİĞİN DERSLER:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #2196F3;">
+                                    <?php echo $verdigiDersSayisi; ?>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>KALAN DERSLER:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #ff9800;">
+                                    <?php echo $kalanDersSayisi; ?>
+                                </td>
+                            </tr>
+                            <?php if($dersCezaSayisi > 0): ?>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>ALDIĞIN DERS CEZALARI:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #dc3545;">
+                                    <?php echo $dersCezaSayisi; ?> ADET
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                            <tr style="background: #e3f2fd;">
+                                <td style="padding: 15px; font-size: 18px;"><strong>ALDIĞIN TOPLAM PUAN:</strong></td>
+                                <td style="padding: 15px; text-align: right; font-weight: bold; font-size: 20px; color: #2196F3;">
+                                    <?php echo $normalDersPuan + $ilaveDersPuan; ?>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- TOPLAM PUANLAMA -->
+                    <div style="margin-bottom: 30px; border: 3px solid #667eea; border-radius: 10px; padding: 20px; background: linear-gradient(135deg, #f8f9ff 0%, #fff8f8 100%);">
+                        <h3 style="color: #667eea; margin: 0 0 15px 0; font-size: 22px; text-align: center; border-bottom: 2px solid #667eea; padding-bottom: 10px;">
+                            ⭐ <?php echo strtoupper(ayAdi($ay)); ?> AYI TOPLAM PUANLARIN
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>TOPLAM NAMAZ:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #28a745;">
+                                    <?php echo ($ozetRapor['toplam'] ?? 0) + ($ilaveNamazPuan ?? 0); ?> PUAN
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>TOPLAM DERS:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #2196F3;">
+                                    <?php echo $normalDersPuan + $ilaveDersPuan; ?> PUAN
+                                </td>
+                            </tr>
+                            <?php if($cezaPuan < 0): ?>
+                            <tr>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd;"><strong>TOPLAM CEZA:</strong></td>
+                                <td style="padding: 10px; border-bottom: 1px solid #ddd; text-align: right; font-weight: bold; color: #dc3545;">
+                                    <?php echo abs($cezaPuan); ?> PUAN
+                                </td>
+                            </tr>
+                            <?php endif; ?>
+                            <tr style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                                <td style="padding: 20px; font-size: 20px;"><strong>TOPLAM PUAN:</strong></td>
+                                <td style="padding: 20px; text-align: right; font-weight: bold; font-size: 24px;">
+                                    <?php echo $toplamPuan; ?>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- SIRALAMA VE BAŞARI MESAJI -->
+                    <div style="text-align: center; padding: 30px; background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%); border-radius: 10px; margin-bottom: 30px;">
+                        <p style="font-size: 24px; font-weight: bold; color: #2d3436; margin: 0;">
+                            <?php echo $toplamOgrenci; ?> ÖĞRENCİ ARASINDAN <?php echo $siralama; ?>. OLDUN
+                        </p>
+                    </div>
+
+                    <!-- İMAM İMZA -->
+                    <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #ddd;">
+                        <p style="font-size: 18px; color: #28a745; font-weight: bold; margin: 20px 0;">
+                            BAŞARILARININ DEVAMINI DİLİYORUM
+                        </p>
+                        <p style="font-size: 16px; color: #666; margin: 10px 0;">
+                            MEHMET TÜZÜN
+                        </p>
+                        <p style="font-size: 14px; color: #999; margin: 5px 0;">
+                            ATAKÖY CAMİİ İMAM HATİBİ
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="rapor-butonlar">
                 <button onclick="window.print()" class="btn-print">🖨️ Yazdır</button>
+                <button onclick="karneYazdir()" class="btn-print" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">📋 Karne Yazdır</button>
                 <a href="index.php" class="btn-geri">← Geri Dön</a>
             </div>
             <?php else: ?>
@@ -928,6 +1124,26 @@ require_once 'config/header.php';
         </div>
 
     <script>
+        function karneYazdir() {
+            // Normal raporu gizle
+            const normalRapor = document.querySelector('.container > div:not(header)');
+            const normalDisplay = normalRapor.style.display;
+            normalRapor.style.display = 'none';
+
+            // Karne'yi göster
+            const karneDiv = document.getElementById('karneDiv');
+            karneDiv.style.display = 'block';
+
+            // Yazdır
+            window.print();
+
+            // Yazdırmadan sonra eski haline döndür
+            setTimeout(function() {
+                normalRapor.style.display = normalDisplay;
+                karneDiv.style.display = 'none';
+            }, 100);
+        }
+
         function toggleSilinenNamazDetay() {
             const detayDiv = document.getElementById('silinenNamazDetayDiv');
             if (detayDiv) {
