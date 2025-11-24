@@ -228,7 +228,7 @@ require_once 'config/header.php';
                         <td><?php echo basename($y); ?></td>
                         <td><?php echo round(filesize($y)/1024, 2); ?> KB</td>
                         <td><?php echo date('d.m.Y H:i', filemtime($y)); ?></td>
-                        <td><a href="<?php echo $y; ?>" download class="btn-sm" style="background: #28a745; color: white;">⬇️ İndir</a></td>
+                        <td><a href="backup/<?php echo basename($y); ?>" download class="btn-sm" style="background: #28a745; color: white;">⬇️ İndir</a></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
