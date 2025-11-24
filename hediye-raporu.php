@@ -10,12 +10,12 @@ $sayfa_basligi = 'Hediye Raporu - Cami Namaz Takip';
 $yil = isset($_GET['yil']) ? (int)$_GET['yil'] : date('Y');
 $ay = isset($_GET['ay']) ? (int)$_GET['ay'] : date('m');
 $hesaplama_turu = $_GET['hesaplama'] ?? '';
-$odal_birimi = isset($_GET['odal_birimi']) ? (float)$_GET['odal_birimi'] : 0;
+$odul_birimi = isset($_GET['odal_birimi']) ? (float)$_GET['odal_birimi'] : 0;
 
 $sonuclar = [];
-$toplam_odal = 0;
+$toplam_odul = 0;
 
-if (!empty($hesaplama_turu) && $odal_birimi > 0) {
+if (!empty($hesaplama_turu) && $odul_birimi > 0) {
 
     if ($hesaplama_turu === 'vakite_gore') {
         // Toplam namaz vakitine göre hesaplama
@@ -25,7 +25,7 @@ if (!empty($hesaplama_turu) && $odal_birimi > 0) {
                 o.ad_soyad,
                 o.sinif,
                 COUNT(n.id) as toplam_namaz,
-                (COUNT(n.id) * ?) as odal_miktari
+                (COUNT(n.id) * ?) as odul_miktari
             FROM ogrenciler o
             LEFT JOIN namazlar n ON o.id = n.ogrenci_id
                 AND YEAR(n.tarih) = ?
@@ -35,7 +35,7 @@ if (!empty($hesaplama_turu) && $odal_birimi > 0) {
             HAVING toplam_namaz > 0
             ORDER BY toplam_namaz DESC
         ");
-        $stmt->execute([$odal_birimi, $yil, $ay]);
+        $stmt->execute([$odul_birimi, $yil, $ay]);
         $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } elseif ($hesaplama_turu === 'ders_puani') {
@@ -45,22 +45,19 @@ if (!empty($hesaplama_turu) && $odal_birimi > 0) {
                 o.id,
                 o.ad_soyad,
                 o.sinif,
-                (COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                    WHERE ogrenci_id = o.id
-                    AND kategori = 'Ders'
-                    AND YEAR(tarih) = ?
-                    AND MONTH(tarih) = ?), 0)) as ders_puani,
-                (COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                    WHERE ogrenci_id = o.id
-                    AND kategori = 'Ders'
-                    AND YEAR(tarih) = ?
-                    AND MONTH(tarih) = ?), 0) * ?) as odal_miktari
+                COALESCE(SUM(ip.puan), 0) as ders_puani,
+                (COALESCE(SUM(ip.puan), 0) * ?) as odul_miktari
             FROM ogrenciler o
+            LEFT JOIN ilave_puanlar ip ON o.id = ip.ogrenci_id
+                AND ip.kategori = 'Ders'
+                AND YEAR(ip.tarih) = ?
+                AND MONTH(ip.tarih) = ?
             WHERE o.durum = 'Aktif'
+            GROUP BY o.id, o.ad_soyad, o.sinif
             HAVING ders_puani > 0
             ORDER BY ders_puani DESC
         ");
-        $stmt->execute([$yil, $ay, $yil, $ay, $odal_birimi]);
+        $stmt->execute([$odul_birimi, $yil, $ay]);
         $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } elseif ($hesaplama_turu === 'toplam_puan') {
@@ -71,60 +68,37 @@ if (!empty($hesaplama_turu) && $odal_birimi > 0) {
                 o.ad_soyad,
                 o.sinif,
                 (
-                    COALESCE(COUNT(n.id), 0) +
-                    COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END)
-                        FROM ilave_puanlar
-                        WHERE ogrenci_id = o.id
-                        AND kategori = 'Namaz'
-                        AND YEAR(tarih) = ?
-                        AND MONTH(tarih) = ?), 0) +
-                    COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END)
-                        FROM ilave_puanlar
-                        WHERE ogrenci_id = o.id
-                        AND YEAR(tarih) = ?
-                        AND MONTH(tarih) = ?), 0) +
-                    COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                        WHERE ogrenci_id = o.id
-                        AND kategori = 'Ders'
-                        AND YEAR(tarih) = ?
-                        AND MONTH(tarih) = ?), 0)
+                    COALESCE(COUNT(DISTINCT n.id), 0) +
+                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan > 0 THEN ip.puan ELSE 0 END), 0) +
+                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan < 0 THEN ip.puan ELSE 0 END), 0) +
+                    COALESCE(SUM(CASE WHEN ip.kategori = 'Ders' THEN ip.puan ELSE 0 END), 0)
                 ) as toplam_puan,
                 (
-                    (COALESCE(COUNT(n.id), 0) +
-                    COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END)
-                        FROM ilave_puanlar
-                        WHERE ogrenci_id = o.id
-                        AND kategori = 'Namaz'
-                        AND YEAR(tarih) = ?
-                        AND MONTH(tarih) = ?), 0) +
-                    COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END)
-                        FROM ilave_puanlar
-                        WHERE ogrenci_id = o.id
-                        AND YEAR(tarih) = ?
-                        AND MONTH(tarih) = ?), 0) +
-                    COALESCE((SELECT SUM(puan) FROM ilave_puanlar
-                        WHERE ogrenci_id = o.id
-                        AND kategori = 'Ders'
-                        AND YEAR(tarih) = ?
-                        AND MONTH(tarih) = ?), 0))
+                    (COALESCE(COUNT(DISTINCT n.id), 0) +
+                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan > 0 THEN ip.puan ELSE 0 END), 0) +
+                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan < 0 THEN ip.puan ELSE 0 END), 0) +
+                    COALESCE(SUM(CASE WHEN ip.kategori = 'Ders' THEN ip.puan ELSE 0 END), 0))
                     * ?
-                ) as odal_miktari
+                ) as odul_miktari
             FROM ogrenciler o
             LEFT JOIN namazlar n ON o.id = n.ogrenci_id
                 AND YEAR(n.tarih) = ?
                 AND MONTH(n.tarih) = ?
+            LEFT JOIN ilave_puanlar ip ON o.id = ip.ogrenci_id
+                AND YEAR(ip.tarih) = ?
+                AND MONTH(ip.tarih) = ?
             WHERE o.durum = 'Aktif'
             GROUP BY o.id, o.ad_soyad, o.sinif
             HAVING toplam_puan > 0
             ORDER BY toplam_puan DESC
         ");
-        $stmt->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $odal_birimi, $yil, $ay]);
+        $stmt->execute([$odul_birimi, $yil, $ay, $yil, $ay]);
         $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // Toplam ödül miktarını hesapla
     foreach ($sonuclar as $sonuc) {
-        $toplam_odal += $sonuc['odal_miktari'];
+        $toplam_odul += $sonuc['odul_miktari'];
     }
 }
 
@@ -251,7 +225,7 @@ $aylar = [
         font-size: 24px;
     }
 
-    .toplam-odal {
+    .toplam-odul {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
         padding: 15px 25px;
@@ -295,7 +269,7 @@ $aylar = [
         font-size: 16px;
     }
 
-    .odal-badge {
+    .odul-badge {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
         padding: 8px 15px;
@@ -369,7 +343,7 @@ $aylar = [
 
                 <div class="form-group">
                     <label>💰 Ödül Birimi (1 Puan = ? TL):</label>
-                    <input type="number" name="odal_birimi" step="0.01" min="0.01" value="<?php echo $odal_birimi > 0 ? $odal_birimi : ''; ?>" placeholder="Örn: 0.50" required>
+                    <input type="number" name="odal_birimi" step="0.01" min="0.01" value="<?php echo $odul_birimi > 0 ? $odul_birimi : ''; ?>" placeholder="Örn: 0.50" required>
                 </div>
             </div>
 
@@ -411,11 +385,11 @@ $aylar = [
                     Ödül Raporu
                 </h3>
                 <p style="margin: 5px 0 0 0; color: #666;">
-                    <?php echo $aylar[$ay] . ' ' . $yil; ?> - Ödül Birimi: <?php echo number_format($odal_birimi, 2); ?> ₺
+                    <?php echo $aylar[$ay] . ' ' . $yil; ?> - Ödül Birimi: <?php echo number_format($odul_birimi, 2); ?> ₺
                 </p>
             </div>
-            <div class="toplam-odal">
-                Toplam: <?php echo number_format($toplam_odal, 2); ?> ₺
+            <div class="toplam-odul">
+                Toplam: <?php echo number_format($toplam_odul, 2); ?> ₺
             </div>
         </div>
 
@@ -452,8 +426,8 @@ $aylar = [
                         ?>
                     </td>
                     <td>
-                        <span class="odal-badge">
-                            <?php echo number_format($sonuc['odal_miktari'], 2); ?> ₺
+                        <span class="odul-badge">
+                            <?php echo number_format($sonuc['odul_miktari'], 2); ?> ₺
                         </span>
                     </td>
                 </tr>
