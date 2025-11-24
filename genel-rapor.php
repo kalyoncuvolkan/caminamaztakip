@@ -16,9 +16,21 @@ $aylikRapor = $pdo->prepare("
         COALESCE(SUM(CASE WHEN n.kiminle_geldi = 'Anne-Babası' THEN 1 ELSE 0 END), 0) as anne_babasi_sayisi,
         COALESCE(COUNT(n.id), 0) as toplam_namaz,
         COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_namaz_puan,
+        COALESCE((SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
+                  FROM ogrenci_dersler od
+                  JOIN dersler d ON od.ders_id = d.id
+                  WHERE od.ogrenci_id = o.id
+                      AND YEAR(od.verme_tarihi) = ?
+                      AND MONTH(od.verme_tarihi) = ?), 0) as normal_ders_puan,
         COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_ders_puan,
         (COALESCE(COUNT(n.id), 0) +
          COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+         COALESCE((SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
+                   FROM ogrenci_dersler od
+                   JOIN dersler d ON od.ders_id = d.id
+                   WHERE od.ogrenci_id = o.id
+                       AND YEAR(od.verme_tarihi) = ?
+                       AND MONTH(od.verme_tarihi) = ?), 0) +
          COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0)) as toplam_puan
     FROM
         ogrenciler o
@@ -30,7 +42,7 @@ $aylikRapor = $pdo->prepare("
     ORDER BY
         toplam_puan DESC, toplam_namaz DESC, o.ad_soyad
 ");
-$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
+$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
 $raporlar = $aylikRapor->fetchAll();
 
 $toplamVakit = 0;
@@ -258,7 +270,7 @@ require_once 'config/header.php';
                             <th>Anne-Babası</th>
                             <th>Toplam Vakit</th>
                             <th>İlave Namaz Puanı</th>
-                            <th>İlave Ders Puanı</th>
+                            <th>Ders Puanı</th>
                             <th>Toplam Puan</th>
                         </tr>
                     </thead>
@@ -277,7 +289,19 @@ require_once 'config/header.php';
                             <td><?php echo $rapor['anne_babasi_sayisi']; ?></td>
                             <td><?php echo $rapor['toplam_namaz']; ?></td>
                             <td style="color: #28a745; font-weight: bold;"><?php echo $rapor['ilave_namaz_puan'] > 0 ? '+' . $rapor['ilave_namaz_puan'] : '0'; ?></td>
-                            <td style="color: #2196F3; font-weight: bold;"><?php echo $rapor['ilave_ders_puan'] > 0 ? '+' . $rapor['ilave_ders_puan'] : '0'; ?></td>
+                            <td style="color: #2196F3; font-weight: bold;">
+                                <?php
+                                $toplamDers = ($rapor['normal_ders_puan'] ?? 0) + ($rapor['ilave_ders_puan'] ?? 0);
+                                echo $toplamDers > 0 ? $toplamDers : '0';
+                                if($rapor['normal_ders_puan'] > 0 && $rapor['ilave_ders_puan'] > 0) {
+                                    echo '<br><small style="font-size: 10px; font-weight: normal;">(' . $rapor['normal_ders_puan'] . '+' . $rapor['ilave_ders_puan'] . ')</small>';
+                                } elseif($rapor['normal_ders_puan'] > 0) {
+                                    echo '<br><small style="font-size: 10px; font-weight: normal;">(normal)</small>';
+                                } elseif($rapor['ilave_ders_puan'] > 0) {
+                                    echo '<br><small style="font-size: 10px; font-weight: normal;">(ilave)</small>';
+                                }
+                                ?>
+                            </td>
                             <td class="toplam" style="background: #e8f5e9; font-weight: bold; font-size: 16px;"><?php echo $rapor['toplam_puan']; ?></td>
                         </tr>
                         <?php endforeach; ?>
