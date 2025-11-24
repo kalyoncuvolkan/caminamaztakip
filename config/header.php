@@ -121,6 +121,7 @@
                     <a href="mesajlar.php" class="<?php echo ($aktif_sayfa ?? '') == 'mesajlar' ? 'active' : ''; ?>">💬 Mesajlar</a>
                     <a href="genel-rapor.php" class="<?php echo ($aktif_sayfa ?? '') == 'raporlar' ? 'active' : ''; ?>">📊 Raporlar</a>
                     <a href="donem-rapor.php" class="<?php echo ($aktif_sayfa ?? '') == 'donem_rapor' ? 'active' : ''; ?>">📋 Dönem Raporu</a>
+                    <a href="hediye-raporu.php" class="<?php echo ($aktif_sayfa ?? '') == 'hediye-raporu' ? 'active' : ''; ?>">🎁 Hediye Raporu</a>
                     <a href="update.php" class="<?php echo ($aktif_sayfa ?? '') == 'update' ? 'active' : ''; ?>">🔄 Güncellemeler</a>
                     <a href="yedekleme.php" class="<?php echo ($aktif_sayfa ?? '') == 'yedekleme' ? 'active' : ''; ?>">💾 Yedekleme</a>
                 </div>
