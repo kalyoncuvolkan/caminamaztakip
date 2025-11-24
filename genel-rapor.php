@@ -45,7 +45,7 @@ $aylikRapor = $pdo->prepare("
     ORDER BY
         toplam_puan DESC, toplam_namaz DESC, o.ad_soyad
 ");
-$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
+$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
 $raporlar = $aylikRapor->fetchAll();
 
 $toplamVakit = 0;

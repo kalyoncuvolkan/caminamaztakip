@@ -342,7 +342,13 @@ require_once 'config/header.php';
             nav,
             .btn-print,
             .btn-geri,
-            h2 {
+            h2,
+            header {
+                display: none !important;
+            }
+
+            /* Normal rapor içeriğini gizle (karne yazdırırken) */
+            body:has(#karneDiv[style*="display: block"]) .rapor-icerik {
                 display: none !important;
             }
 
@@ -664,6 +670,7 @@ require_once 'config/header.php';
                 </table>
             </div>
 
+            <div class="rapor-icerik">
             <div class="rapor-ozet">
                 <h4><span class="no-print">📊 </span>Özet Bilgiler</h4>
                 <div class="ozet-kutular">
@@ -953,6 +960,7 @@ require_once 'config/header.php';
                     </p>
                 </div>
             </div>
+            </div><!-- rapor-icerik kapatma -->
 
             <!-- KARNE BÖLÜMÜ (Gizli) -->
             <div id="karneDiv" style="display: none;">
@@ -1125,23 +1133,28 @@ require_once 'config/header.php';
 
     <script>
         function karneYazdir() {
-            // Normal raporu gizle
-            const normalRapor = document.querySelector('.container > div:not(header)');
-            const normalDisplay = normalRapor.style.display;
-            normalRapor.style.display = 'none';
+            // Tüm rapor içeriğini gizle
+            const raporIcerik = document.querySelector('.rapor-icerik');
+            if(raporIcerik) {
+                raporIcerik.style.display = 'none';
+            }
 
             // Karne'yi göster
             const karneDiv = document.getElementById('karneDiv');
-            karneDiv.style.display = 'block';
+            if(karneDiv) {
+                karneDiv.style.display = 'block';
 
-            // Yazdır
-            window.print();
+                // Yazdır
+                window.print();
 
-            // Yazdırmadan sonra eski haline döndür
-            setTimeout(function() {
-                normalRapor.style.display = normalDisplay;
-                karneDiv.style.display = 'none';
-            }, 100);
+                // Yazdırmadan sonra eski haline döndür
+                setTimeout(function() {
+                    if(raporIcerik) raporIcerik.style.display = '';
+                    karneDiv.style.display = 'none';
+                }, 500);
+            } else {
+                alert('Karne yüklenemedi. Lütfen sayfayı yenileyin.');
+            }
         }
 
         function toggleSilinenNamazDetay() {
