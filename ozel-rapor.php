@@ -94,7 +94,6 @@ if($ay) {
     $ilaveNamazPuan = $ilavePuanlar['ilave_namaz_puan'] ?? 0;
     $cezaPuan = $ilavePuanlar['ceza_puan'] ?? 0;
     $ilaveDersPuan = $ilavePuanlar['ilave_ders_puan'] ?? 0;
-    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $cezaPuan + $ilaveDersPuan;
 
     // İlave namaz puan detaylarını çek (sadece pozitif puanlar)
     $ilaveNamazPuanDetayStmt = $pdo->prepare("
@@ -160,7 +159,10 @@ if($ay) {
         $normalDersPuan += $ders['puan'];
     }
 
-    // Sıralama hesaplama (namaz + ilave namaz + ilave ders puanları dahil)
+    // Toplam puanı yeniden hesapla (normal ders puanı da dahil)
+    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $cezaPuan + $normalDersPuan + $ilaveDersPuan;
+
+    // Sıralama hesaplama (namaz + ilave namaz + normal ders + ilave ders + ceza puanları dahil)
     $siralamaStmt = $pdo->prepare("
         SELECT COUNT(*) + 1 as sira
         FROM (
@@ -168,7 +170,12 @@ if($ay) {
                 o.id,
                 COUNT(n.id) as toplam_namaz,
                 (COUNT(n.id) +
-                 COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'), 0) +
+                 COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'), 0) +
+                 COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                 COALESCE((SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
+                           FROM ogrenci_dersler od
+                           JOIN dersler d ON od.ders_id = d.id
+                           WHERE od.ogrenci_id = o.id AND YEAR(od.verme_tarihi) = ? AND MONTH(od.verme_tarihi) = ?), 0) +
                  COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Ders'), 0)) as toplam_puan
             FROM ogrenciler o
             LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
@@ -177,7 +184,7 @@ if($ay) {
         ) as temp
         WHERE toplam_puan > ? OR (toplam_puan = ? AND toplam_namaz > ?)
     ");
-    $siralamaStmt->execute([$yil, $ay, $yil, $ay, $yil, $ay, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
+    $siralamaStmt->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $toplamPuan, $toplamPuan, $ozetRapor['toplam'] ?? 0]);
     $siralama = $siralamaStmt->fetchColumn();
 
     // Toplam öğrenci sayısı

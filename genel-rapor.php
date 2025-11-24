@@ -26,7 +26,8 @@ $aylikRapor = $pdo->prepare("
                       AND MONTH(od.verme_tarihi) = ?), 0) as normal_ders_puan,
         COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_ders_puan,
         (COALESCE(COUNT(n.id), 0) +
-         COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+         COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+         COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
          COALESCE((SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
                    FROM ogrenci_dersler od
                    JOIN dersler d ON od.ders_id = d.id
@@ -44,7 +45,7 @@ $aylikRapor = $pdo->prepare("
     ORDER BY
         toplam_puan DESC, toplam_namaz DESC, o.ad_soyad
 ");
-$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
+$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
 $raporlar = $aylikRapor->fetchAll();
 
 $toplamVakit = 0;
