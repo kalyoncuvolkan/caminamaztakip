@@ -1,0 +1,21 @@
+# Backup klasörü erişim izinleri
+# Sadece SQL dosyalarının indirilmesine izin ver
+
+# DirectoryIndex'i kapat (klasör listelemeyi engelle)
+Options -Indexes
+
+# SQL dosyalarını indir
+<FilesMatch "\.sql$">
+    Order allow,deny
+    Allow from all
+
+    # Content-Type ayarla
+    Header set Content-Type "application/sql"
+    Header set Content-Disposition "attachment"
+</FilesMatch>
+
+# Diğer tüm dosyalara erişimi engelle
+<FilesMatch "\.(?!sql$)">
+    Order deny,allow
+    Deny from all
+</FilesMatch>
