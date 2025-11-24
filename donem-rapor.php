@@ -97,7 +97,9 @@ $ilave_puan_toplam = $ilave_puanlar->fetchColumn() ?? 0;
 // Toplam ders puanı
 $toplam_ders_puani = ($stats['toplam_puan'] ?? 0) + $ilave_puan_toplam;
 
-// Sıralama hesapla
+// Sıralama hesapla - TÜM ÖĞRENCILER İÇİN YILLIK TOPLAM PUAN İLE KARŞILAŞTIR
+// Not: Sıralama için her öğrencinin kendi dönem aralığı değil, yıl bazlı toplam puan kullanılır
+$yil = date('Y');
 $siralama_query = $pdo->prepare("
     SELECT COUNT(*) + 1 as siralama
     FROM (
@@ -106,20 +108,35 @@ $siralama_query = $pdo->prepare("
                 FROM ogrenci_dersler od
                 JOIN dersler d ON od.ders_id = d.id
                 WHERE od.ogrenci_id = o.id
-                    AND od.atama_tarihi >= ?
-                    AND od.atama_tarihi <= ?) +
+                    AND YEAR(od.atama_tarihi) = ?) +
                COALESCE((SELECT SUM(puan)
                          FROM ilave_puanlar
                          WHERE ogrenci_id = o.id
                              AND kategori = 'Ders'
-                             AND tarih >= ?
-                             AND tarih <= ?), 0) as toplam
+                             AND YEAR(tarih) = ?), 0) as toplam
         FROM ogrenciler o
         WHERE o.aktif = 1
     ) as puanlar
     WHERE toplam > ?
 ");
-$siralama_query->execute([$donem_baslangic, $donem_bitis, $donem_baslangic, $donem_bitis, $toplam_ders_puani]);
+
+// Öğrencinin yıllık toplam puanını hesapla
+$yillik_toplam_query = $pdo->prepare("
+    (SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
+     FROM ogrenci_dersler od
+     JOIN dersler d ON od.ders_id = d.id
+     WHERE od.ogrenci_id = ?
+         AND YEAR(od.atama_tarihi) = ?) +
+    COALESCE((SELECT SUM(puan)
+              FROM ilave_puanlar
+              WHERE ogrenci_id = ?
+                  AND kategori = 'Ders'
+                  AND YEAR(tarih) = ?), 0)
+");
+$yillik_toplam_query->execute([$ogrenci_id, $yil, $ogrenci_id, $yil]);
+$yillik_toplam_puan = $yillik_toplam_query->fetchColumn() ?? 0;
+
+$siralama_query->execute([$yil, $yil, $yillik_toplam_puan]);
 $siralama = $siralama_query->fetchColumn();
 
 $toplam_ogrenci = $pdo->query("SELECT COUNT(*) FROM ogrenciler WHERE aktif = 1")->fetchColumn();
