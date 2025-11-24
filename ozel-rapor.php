@@ -379,9 +379,15 @@ require_once 'config/header.php';
                 margin: 0 0 5px 0 !important;
             }
 
+            /* Öğrenci adı kutusu - başlıkta */
+            #karneDiv > div > div:first-child > div {
+                padding: 10px !important;
+                margin: 10px 0 !important;
+            }
+
             #karneDiv h2 {
-                font-size: 18px !important;
-                margin: 5px 0 !important;
+                font-size: 19px !important;
+                margin: 0 !important;
             }
 
             #karneDiv h3 {
@@ -434,24 +440,40 @@ require_once 'config/header.php';
 
             /* İmza bölümü */
             #karneDiv > div > div:last-child {
-                margin-top: 15px !important;
-                padding-top: 10px !important;
+                margin-top: 12px !important;
+                padding-top: 8px !important;
             }
 
-            #karneDiv > div > div:last-child p {
-                margin: 5px 0 !important;
+            /* Öğrenci bilgisi kutusu - imza bölümünde */
+            #karneDiv > div > div:last-child > div {
+                padding: 10px !important;
+                margin-bottom: 12px !important;
+                border-left-width: 3px !important;
             }
 
-            #karneDiv > div > div:last-child p:first-child {
+            #karneDiv > div > div:last-child > div p {
+                font-size: 12px !important;
+                margin: 0 !important;
+            }
+
+            #karneDiv > div > div:last-child > div strong {
+                font-size: 14px !important;
+            }
+
+            #karneDiv > div > div:last-child > p {
+                margin: 4px 0 !important;
+            }
+
+            #karneDiv > div > div:last-child > p:first-of-type {
                 font-size: 14px !important;
                 margin: 10px 0 5px 0 !important;
             }
 
-            #karneDiv > div > div:last-child p:nth-child(2) {
+            #karneDiv > div > div:last-child > p:nth-of-type(2) {
                 font-size: 13px !important;
             }
 
-            #karneDiv > div > div:last-child p:last-child {
+            #karneDiv > div > div:last-child > p:last-of-type {
                 font-size: 11px !important;
             }
 
@@ -1056,9 +1078,11 @@ require_once 'config/header.php';
                     <!-- Başlık -->
                     <div style="text-align: center; border-bottom: 4px solid #667eea; padding-bottom: 20px; margin-bottom: 30px;">
                         <h1 style="color: #667eea; margin: 0; font-size: 28px;">KARNE</h1>
-                        <h2 style="color: #333; margin: 10px 0; font-size: 24px; text-transform: uppercase;">
-                            <?php echo $ogrenci['ad_soyad']; ?>
-                        </h2>
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; margin: 15px 0; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <h2 style="margin: 0; font-size: 26px; text-transform: uppercase; letter-spacing: 1px;">
+                                <?php echo $ogrenci['ad_soyad']; ?>
+                            </h2>
+                        </div>
                         <h3 style="color: #666; margin: 5px 0; font-size: 18px;">
                             <?php echo $yil . ' ' . strtoupper(ayAdi($ay)) . ' AYI NAMAZ VE DERS RAPORU'; ?>
                         </h3>
@@ -1196,6 +1220,11 @@ require_once 'config/header.php';
 
                     <!-- İMAM İMZA -->
                     <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #ddd;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #667eea;">
+                            <p style="font-size: 15px; color: #333; margin: 0;">
+                                Bu karne <strong style="color: #667eea; font-size: 17px; text-transform: uppercase;"><?php echo $ogrenci['ad_soyad']; ?></strong> adına düzenlenmiştir.
+                            </p>
+                        </div>
                         <p style="font-size: 18px; color: #28a745; font-weight: bold; margin: 20px 0;">
                             BAŞARILARININ DEVAMINI DİLİYORUM
                         </p>
