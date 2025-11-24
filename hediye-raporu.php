@@ -343,8 +343,8 @@ $aylar = [
 
         /* Body ve container ayarları */
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0 !important;
+            padding: 0 !important;
         }
 
         .container {
@@ -352,55 +352,118 @@ $aylar = [
             margin: 0 !important;
             padding: 0 !important;
             box-shadow: none !important;
+            background: white !important;
         }
 
         .hediye-container {
-            padding: 20px !important;
+            padding: 0 !important;
+            margin: 0 !important;
             max-width: 100% !important;
         }
 
         /* Sonuç paneli */
         .sonuc-panel {
             box-shadow: none !important;
-            border: 1px solid #ddd !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
         }
 
         .sonuc-baslik {
-            border-bottom: 2px solid #333 !important;
+            border-bottom: 2px solid #000 !important;
+            margin-bottom: 15px !important;
+            padding-bottom: 10px !important;
+            page-break-after: avoid !important;
+        }
+
+        .sonuc-baslik h3 {
+            color: #000 !important;
+            font-size: 18px !important;
+            margin: 0 !important;
+        }
+
+        .sonuc-baslik p {
+            color: #000 !important;
+            margin: 5px 0 0 0 !important;
+        }
+
+        /* Toplam ödül - renkli arka plan kaldır */
+        .toplam-odul {
+            background: white !important;
+            color: #000 !important;
+            border: 2px solid #000 !important;
+            padding: 10px 15px !important;
+            font-size: 16px !important;
         }
 
         /* Tablo optimizasyonu */
         .sonuc-tablo {
-            page-break-inside: avoid;
             width: 100% !important;
+            margin-top: 10px !important;
+            border-collapse: collapse !important;
+            page-break-inside: auto !important;
         }
 
         .sonuc-tablo thead {
-            background: #333 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            background: white !important;
+            border-bottom: 2px solid #000 !important;
+        }
+
+        .sonuc-tablo thead tr {
+            page-break-after: avoid !important;
         }
 
         .sonuc-tablo th {
-            border: 1px solid #333 !important;
+            border: 1px solid #000 !important;
+            background: #f5f5f5 !important;
+            color: #000 !important;
+            padding: 8px !important;
+            font-weight: bold !important;
         }
 
         .sonuc-tablo td {
-            border: 1px solid #ddd !important;
+            border: 1px solid #999 !important;
+            padding: 6px 8px !important;
+            color: #000 !important;
         }
 
-        /* Renkli elementleri print uyumlu yap */
-        .siralama,
-        .odul-badge,
-        .toplam-odul {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+        .sonuc-tablo tbody tr {
+            page-break-inside: avoid !important;
+        }
+
+        /* Sıralama - renkli arka plan kaldır */
+        .siralama {
+            background: white !important;
+            color: #000 !important;
+            border: 2px solid #000 !important;
+            border-radius: 50% !important;
+            width: 30px !important;
+            height: 30px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-weight: bold !important;
+        }
+
+        /* Ödül badge - renkli arka plan kaldır */
+        .odul-badge {
+            background: white !important;
+            color: #000 !important;
+            border: 1px solid #000 !important;
+            padding: 5px 10px !important;
+            font-weight: bold !important;
         }
 
         /* Sayfa ayarları */
         @page {
             size: A4;
-            margin: 15mm;
+            margin: 12mm 15mm;
+        }
+
+        /* Boş sayfaları önle */
+        * {
+            box-sizing: border-box !important;
         }
     }
 </style>
