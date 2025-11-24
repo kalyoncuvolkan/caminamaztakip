@@ -1,4 +1,8 @@
 <?php
+// Hata ayıklama için
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 require_once 'config/auth.php';
 checkAuth();
 require_once 'config/db.php';
@@ -14,8 +18,10 @@ $odul_birimi = isset($_GET['odal_birimi']) ? (float)$_GET['odal_birimi'] : 0;
 
 $sonuclar = [];
 $toplam_odul = 0;
+$hata_mesaji = '';
 
 if (!empty($hesaplama_turu) && $odul_birimi > 0) {
+    try {
 
     if ($hesaplama_turu === 'vakite_gore') {
         // Toplam namaz vakitine göre hesaplama
@@ -99,6 +105,12 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
     // Toplam ödül miktarını hesapla
     foreach ($sonuclar as $sonuc) {
         $toplam_odul += $sonuc['odul_miktari'];
+    }
+
+    } catch (PDOException $e) {
+        $hata_mesaji = "Veritabanı Hatası: " . $e->getMessage();
+    } catch (Exception $e) {
+        $hata_mesaji = "Genel Hata: " . $e->getMessage();
     }
 }
 
@@ -371,6 +383,19 @@ $aylar = [
             </div>
         </form>
     </div>
+
+    <?php if (!empty($hata_mesaji)): ?>
+    <div class="sonuc-panel" style="background: #f8d7da; border: 2px solid #dc3545;">
+        <h3 style="color: #dc3545; margin-top: 0;">⚠️ Hata Oluştu</h3>
+        <p style="color: #721c24; font-weight: bold;"><?php echo htmlspecialchars($hata_mesaji); ?></p>
+        <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto; font-size: 12px;"><?php
+            echo "Yıl: $yil\n";
+            echo "Ay: $ay\n";
+            echo "Hesaplama Türü: $hesaplama_turu\n";
+            echo "Ödül Birimi: $odul_birimi\n";
+        ?></pre>
+    </div>
+    <?php endif; ?>
 
     <?php if (!empty($sonuclar)): ?>
     <div class="sonuc-panel" id="sonucPanel">
