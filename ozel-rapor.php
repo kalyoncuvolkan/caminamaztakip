@@ -61,6 +61,25 @@ if($ay) {
     $ozetStmt->execute([$ogrenci_id, $yil, $ay]);
     $ozetRapor = $ozetStmt->fetch();
     
+    // Silinen namaz kayıtları
+    $silinenNamazStmt = $pdo->prepare("
+        SELECT COUNT(*) as silinen_sayisi
+        FROM puan_silme_gecmisi
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
+    ");
+    $silinenNamazStmt->execute([$ogrenci_id, $yil, $ay]);
+    $silinenNamazSayisi = $silinenNamazStmt->fetchColumn();
+
+    // Silinen namaz detayları
+    $silinenNamazDetayStmt = $pdo->prepare("
+        SELECT namaz_vakti, kiminle_geldi, tarih, silme_nedeni, silme_zamani
+        FROM puan_silme_gecmisi
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
+        ORDER BY silme_zamani DESC
+    ");
+    $silinenNamazDetayStmt->execute([$ogrenci_id, $yil, $ay]);
+    $silinenNamazDetaylar = $silinenNamazDetayStmt->fetchAll();
+
     // Öğrencinin toplam puanını hesapla (namaz + ilave namaz puan + ilave ders puan)
     $ilavePuanStmt = $pdo->prepare("
         SELECT
@@ -625,6 +644,17 @@ require_once 'config/header.php';
                         <span class="etiket">Toplam Vakit:</span>
                         <span class="deger"><?php echo $ozetRapor['toplam'] ?? 0; ?></span>
                     </div>
+                    <?php if($silinenNamazSayisi > 0): ?>
+                    <div class="ozet-kutu" style="background: #fff5f5; border: 2px solid #ff6b6b; cursor: pointer;" onclick="toggleSilinenNamazDetay()">
+                        <span class="etiket">Silinen Namaz:</span>
+                        <span class="deger" style="color: #ff6b6b;">-<?php echo $silinenNamazSayisi; ?></span>
+                        <?php if(!empty($silinenNamazDetaylar)): ?>
+                        <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
+                            ▼ Detay için tıklayın
+                        </small>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                     <div class="ozet-kutu" style="background: #d4edda; border: 2px solid #28a745; cursor: pointer;" onclick="toggleIlaveNamazPuanDetay()">
                         <span class="etiket">İlave Namaz Puanı:</span>
                         <span class="deger" style="color: #28a745;">+<?php echo $ilaveNamazPuan ?? 0; ?></span>
@@ -662,6 +692,57 @@ require_once 'config/header.php';
                         <span class="deger" style="font-size: 1.5em;"><?php echo $toplamPuan ?? 0; ?></span>
                     </div>
                 </div>
+
+                <?php if(!empty($silinenNamazDetaylar)): ?>
+                <div id="silinenNamazDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #ff6b6b;">
+                    <h4 style="margin-top: 0; color: #ff6b6b;"><span class="no-print">🗑️ </span>Silinen Namaz Detayları</h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #ff6b6b; color: white;">
+                                <th style="padding: 10px; text-align: left;">Tarih</th>
+                                <th style="padding: 10px; text-align: left;">Namaz Vakti</th>
+                                <th style="padding: 10px; text-align: left;">Kiminle Geldi</th>
+                                <th style="padding: 10px; text-align: left;">Silme Nedeni</th>
+                                <th style="padding: 10px; text-align: left;">Silinme Zamanı</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($silinenNamazDetaylar as $detay): ?>
+                            <tr style="border-bottom: 1px solid #ddd; background: #fff5f5;">
+                                <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
+                                <td style="padding: 10px; font-weight: 600;">
+                                    <?php
+                                    $vakit_icons = [
+                                        'Sabah' => '🌅',
+                                        'Öğlen' => '☀️',
+                                        'İkindi' => '🌤️',
+                                        'Akşam' => '🌆',
+                                        'Yatsı' => '🌙'
+                                    ];
+                                    echo ($vakit_icons[$detay['namaz_vakti']] ?? '') . ' ' . $detay['namaz_vakti'];
+                                    ?>
+                                </td>
+                                <td style="padding: 10px;"><?php echo htmlspecialchars($detay['kiminle_geldi']); ?></td>
+                                <td style="padding: 10px; color: #666;">
+                                    <?php echo htmlspecialchars($detay['silme_nedeni'] ?: 'Belirtilmemiş'); ?>
+                                </td>
+                                <td style="padding: 10px; font-size: 12px; color: #999;">
+                                    <?php echo date('d.m.Y H:i', strtotime($detay['silme_zamani'])); ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #fff5f5; font-weight: bold;">
+                                <td colspan="4" style="padding: 10px; text-align: right;">TOPLAM SİLİNEN:</td>
+                                <td style="padding: 10px; text-align: left; color: #ff6b6b; font-size: 1.2em;">
+                                    <?php echo $silinenNamazSayisi; ?> vakit
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <?php endif; ?>
 
                 <?php if(!empty($ilaveNamazPuanDetaylar)): ?>
                 <div id="ilaveNamazPuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #28a745;">
@@ -840,6 +921,17 @@ require_once 'config/header.php';
         </div>
 
     <script>
+        function toggleSilinenNamazDetay() {
+            const detayDiv = document.getElementById('silinenNamazDetayDiv');
+            if (detayDiv) {
+                if (detayDiv.style.display === 'none') {
+                    detayDiv.style.display = 'block';
+                } else {
+                    detayDiv.style.display = 'none';
+                }
+            }
+        }
+
         function toggleIlaveNamazPuanDetay() {
             const detayDiv = document.getElementById('ilaveNamazPuanDetayDiv');
             if (detayDiv) {

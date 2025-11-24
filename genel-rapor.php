@@ -17,6 +17,7 @@ $aylikRapor = $pdo->prepare("
         COALESCE(COUNT(n.id), 0) as toplam_namaz,
         COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ilave_namaz_puan,
         COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as ceza_puan,
+        COALESCE((SELECT COUNT(*) FROM puan_silme_gecmisi WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) as silinen_namaz_sayisi,
         COALESCE((SELECT SUM(CASE WHEN od.durum = 'Tamamlandi' AND od.puan_verildi = 1 THEN d.puan ELSE 0 END)
                   FROM ogrenci_dersler od
                   JOIN dersler d ON od.ders_id = d.id
@@ -43,7 +44,7 @@ $aylikRapor = $pdo->prepare("
     ORDER BY
         toplam_puan DESC, toplam_namaz DESC, o.ad_soyad
 ");
-$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
+$aylikRapor->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay]);
 $raporlar = $aylikRapor->fetchAll();
 
 $toplamVakit = 0;
@@ -270,6 +271,7 @@ require_once 'config/header.php';
                             <th>Annesi</th>
                             <th>Anne-Babası</th>
                             <th>Toplam Vakit</th>
+                            <th>Silinen Namaz</th>
                             <th>İlave Namaz Puanı</th>
                             <th>Ceza Puanı</th>
                             <th>Ders Puanı</th>
@@ -290,6 +292,9 @@ require_once 'config/header.php';
                             <td><?php echo $rapor['annesi_sayisi']; ?></td>
                             <td><?php echo $rapor['anne_babasi_sayisi']; ?></td>
                             <td><?php echo $rapor['toplam_namaz']; ?></td>
+                            <td style="<?php echo $rapor['silinen_namaz_sayisi'] > 0 ? 'color: #ff6b6b; font-weight: bold; background: #fff5f5;' : ''; ?>">
+                                <?php echo $rapor['silinen_namaz_sayisi'] > 0 ? '-' . $rapor['silinen_namaz_sayisi'] : '0'; ?>
+                            </td>
                             <td style="color: #28a745; font-weight: bold;"><?php echo $rapor['ilave_namaz_puan'] > 0 ? '+' . $rapor['ilave_namaz_puan'] : '0'; ?></td>
                             <td style="color: #dc3545; font-weight: bold;"><?php echo $rapor['ceza_puan'] < 0 ? $rapor['ceza_puan'] : '0'; ?></td>
                             <td style="color: #2196F3; font-weight: bold;">
