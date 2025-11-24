@@ -59,8 +59,8 @@ if($ay) {
     $ozetStmt->execute([$ogrenci_id, $yil, $ay]);
     $ozetRapor = $ozetStmt->fetch();
 
-    // İlave puan detayları (ay bazlı)
-    $ilavePuanDetayStmt = $pdo->prepare("
+    // İlave puan detayları - Namaz (ay bazlı)
+    $ilaveNamazPuanDetayStmt = $pdo->prepare("
         SELECT puan, aciklama, tarih, 'eklendi' as durum
         FROM ilave_puanlar
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
@@ -70,8 +70,22 @@ if($ay) {
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
         ORDER BY tarih DESC
     ");
-    $ilavePuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
-    $ilavePuanDetaylar = $ilavePuanDetayStmt->fetchAll();
+    $ilaveNamazPuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
+    $ilaveNamazPuanDetaylar = $ilaveNamazPuanDetayStmt->fetchAll();
+
+    // İlave puan detayları - Ders (ay bazlı)
+    $ilaveDersPuanDetayStmt = $pdo->prepare("
+        SELECT puan, aciklama, tarih, 'eklendi' as durum
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Ders'
+        UNION ALL
+        SELECT -puan as puan, CONCAT(aciklama, ' (Silindi: ', silme_nedeni, ')') as aciklama, tarih, 'silindi' as durum
+        FROM ilave_puan_silme_gecmisi
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Ders'
+        ORDER BY tarih DESC
+    ");
+    $ilaveDersPuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
+    $ilaveDersPuanDetaylar = $ilaveDersPuanDetayStmt->fetchAll();
 } else {
     // Yıllık aylara göre özet
     $yillikStmt = $pdo->prepare("
@@ -98,17 +112,21 @@ if($ay) {
     $ozetRapor = $yilOzetStmt->fetch();
 }
 
-// Toplam puan hesaplama
+// Toplam puan hesaplama (Namaz + Ders puanları ayrı)
 $ilavePuanStmt = $pdo->prepare("
-    SELECT COALESCE(SUM(puan), 0) as ilave_puan
+    SELECT
+        COALESCE(SUM(CASE WHEN kategori = 'Namaz' THEN puan ELSE 0 END), 0) as ilave_namaz_puan,
+        COALESCE(SUM(CASE WHEN kategori = 'Ders' THEN puan ELSE 0 END), 0) as ilave_ders_puan
     FROM ilave_puanlar
-    WHERE ogrenci_id = ? AND YEAR(tarih) = ? " . ($ay ? "AND MONTH(tarih) = ?" : "") . " AND kategori = 'Namaz'
-");
+    WHERE ogrenci_id = ? AND YEAR(tarih) = ? " . ($ay ? "AND MONTH(tarih) = ?" : "")
+);
 $params = [$ogrenci_id, $yil];
 if($ay) $params[] = $ay;
 $ilavePuanStmt->execute($params);
-$ilavePuan = $ilavePuanStmt->fetchColumn();
-$toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilavePuan;
+$ilavePuanlar = $ilavePuanStmt->fetch();
+$ilaveNamazPuan = $ilavePuanlar['ilave_namaz_puan'] ?? 0;
+$ilaveDersPuan = $ilavePuanlar['ilave_ders_puan'] ?? 0;
+$toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $ilaveDersPuan;
 
 // Sıralama hesaplama
 if($ay) {
@@ -268,7 +286,7 @@ if($ay) {
                     <h3>#<?php echo $siralama; ?></h3>
                     <p style="font-size: 1.2em; margin: 10px 0;"><?php echo $toplamOgrenci; ?> öğrenci arasında</p>
                     <p style="font-size: 1.5em; font-weight: bold; margin: 10px 0;"><?php echo $toplamPuan; ?> Toplam Puan</p>
-                    <p style="opacity: 0.9;"><?php echo $ozetRapor['toplam']; ?> vakit namaz + <?php echo $ilavePuan; ?> ilave puan</p>
+                    <p style="opacity: 0.9;"><?php echo $ozetRapor['toplam']; ?> vakit namaz + <span style="color: #28a745;"><?php echo $ilaveNamazPuan; ?> namaz</span> + <span style="color: #2196F3;"><?php echo $ilaveDersPuan; ?> ders</span> ilave puanı</p>
                 </div>
 
                 <!-- Özet Bilgiler -->
@@ -346,23 +364,48 @@ if($ay) {
                     </tbody>
                 </table>
 
-                <!-- İlave Puan Detayları -->
-                <?php if(!empty($ilavePuanDetaylar)): ?>
-                <h4 style="margin: 30px 0 15px 0;">⭐ İlave Puan Detayları</h4>
+                <!-- İlave Namaz Puan Detayları -->
+                <?php if(!empty($ilaveNamazPuanDetaylar)): ?>
+                <h4 style="margin: 30px 0 15px 0; color: #28a745;">⭐ İlave Namaz Puan Detayları</h4>
                 <table style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr style="background: #f8f9fa;">
+                        <tr style="background: #d4edda;">
                             <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Tarih</th>
                             <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Açıklama</th>
                             <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Puan</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach($ilavePuanDetaylar as $detay): ?>
+                        <?php foreach($ilaveNamazPuanDetaylar as $detay): ?>
                         <tr style="<?php if($detay['puan'] < 0) echo 'background: #fff3cd;'; ?>">
                             <td style="padding: 12px; border: 1px solid #ddd;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
                             <td style="padding: 12px; border: 1px solid #ddd;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
                             <td style="padding: 12px; text-align: center; font-weight: bold; color: <?php echo $detay['puan'] < 0 ? '#dc3545' : '#28a745'; ?>; border: 1px solid #ddd;">
+                                <?php echo $detay['puan'] > 0 ? '+' : ''; ?><?php echo $detay['puan']; ?>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+
+                <!-- İlave Ders Puan Detayları -->
+                <?php if(!empty($ilaveDersPuanDetaylar)): ?>
+                <h4 style="margin: 30px 0 15px 0; color: #2196F3;">📚 İlave Ders Puan Detayları</h4>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="background: #e3f2fd;">
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Tarih</th>
+                            <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Açıklama</th>
+                            <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Puan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($ilaveDersPuanDetaylar as $detay): ?>
+                        <tr style="<?php if($detay['puan'] < 0) echo 'background: #fff3cd;'; ?>">
+                            <td style="padding: 12px; border: 1px solid #ddd;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
+                            <td style="padding: 12px; border: 1px solid #ddd;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
+                            <td style="padding: 12px; text-align: center; font-weight: bold; color: <?php echo $detay['puan'] < 0 ? '#dc3545' : '#2196F3'; ?>; border: 1px solid #ddd;">
                                 <?php echo $detay['puan'] > 0 ? '+' : ''; ?><?php echo $detay['puan']; ?>
                             </td>
                         </tr>
