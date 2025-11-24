@@ -103,6 +103,32 @@ if($ay) {
     $ilaveDersPuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
     $ilaveDersPuanDetaylar = $ilaveDersPuanDetayStmt->fetchAll();
 
+    // Normal ders puanlarını çek (o ay tamamlanan dersler)
+    $dersPuanStmt = $pdo->prepare("
+        SELECT
+            od.verme_tarihi as tarih,
+            d.ders_adi as aciklama,
+            d.puan,
+            dk.kategori_adi
+        FROM ogrenci_dersler od
+        JOIN dersler d ON od.ders_id = d.id
+        JOIN ders_kategorileri dk ON d.kategori_id = dk.id
+        WHERE od.ogrenci_id = ?
+            AND od.durum = 'Tamamlandi'
+            AND od.puan_verildi = 1
+            AND YEAR(od.verme_tarihi) = ?
+            AND MONTH(od.verme_tarihi) = ?
+        ORDER BY od.verme_tarihi DESC, dk.kategori_adi, d.ders_adi
+    ");
+    $dersPuanStmt->execute([$ogrenci_id, $yil, $ay]);
+    $dersPuanDetaylar = $dersPuanStmt->fetchAll();
+
+    // Normal ders puanı toplamı
+    $normalDersPuan = 0;
+    foreach($dersPuanDetaylar as $ders) {
+        $normalDersPuan += $ders['puan'];
+    }
+
     // Sıralama hesaplama (namaz + ilave namaz + ilave ders puanları dahil)
     $siralamaStmt = $pdo->prepare("
         SELECT COUNT(*) + 1 as sira
@@ -596,12 +622,15 @@ require_once 'config/header.php';
                         </small>
                         <?php endif; ?>
                     </div>
-                    <div class="ozet-kutu" style="background: #e3f2fd; border: 2px solid #2196F3; cursor: pointer;" onclick="toggleIlaveDersPuanDetay()">
-                        <span class="etiket">İlave Ders Puanı:</span>
-                        <span class="deger" style="color: #2196F3;">+<?php echo $ilaveDersPuan ?? 0; ?></span>
-                        <?php if(!empty($ilaveDersPuanDetaylar)): ?>
+                    <div class="ozet-kutu" style="background: #e3f2fd; border: 2px solid #2196F3; cursor: pointer;" onclick="toggleDersPuanDetay()">
+                        <span class="etiket">Ders Puanı:</span>
+                        <span class="deger" style="color: #2196F3;"><?php echo ($normalDersPuan ?? 0) + ($ilaveDersPuan ?? 0); ?></span>
+                        <?php if(!empty($dersPuanDetaylar) || !empty($ilaveDersPuanDetaylar)): ?>
                         <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
-                            ▼ Detay için tıklayın
+                            <?php if($normalDersPuan > 0): ?><?php echo $normalDersPuan; ?> normal<?php endif; ?>
+                            <?php if($normalDersPuan > 0 && $ilaveDersPuan > 0): ?> + <?php endif; ?>
+                            <?php if($ilaveDersPuan > 0): ?><?php echo $ilaveDersPuan; ?> ilave<?php endif; ?>
+                            <br>▼ Detay için tıklayın
                         </small>
                         <?php endif; ?>
                     </div>
@@ -645,9 +674,46 @@ require_once 'config/header.php';
                 </div>
                 <?php endif; ?>
 
-                <?php if(!empty($ilaveDersPuanDetaylar)): ?>
-                <div id="ilaveDersPuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #2196F3;">
-                    <h4 style="margin-top: 0; color: #2196F3;"><span class="no-print">📚 </span>İlave Ders Puanı Detayları</h4>
+                <?php if(!empty($dersPuanDetaylar) || !empty($ilaveDersPuanDetaylar)): ?>
+                <div id="dersPuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #2196F3;">
+                    <h4 style="margin-top: 0; color: #2196F3;"><span class="no-print">📚 </span>Ders Puanı Detayları</h4>
+
+                    <?php if(!empty($dersPuanDetaylar)): ?>
+                    <h5 style="color: #2196F3; margin-top: 20px;">Normal Ders Puanları</h5>
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                        <thead>
+                            <tr style="background: #2196F3; color: white;">
+                                <th style="padding: 10px; text-align: left;">Tarih</th>
+                                <th style="padding: 10px; text-align: left;">Kategori</th>
+                                <th style="padding: 10px; text-align: left;">Ders</th>
+                                <th style="padding: 10px; text-align: center;">Puan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($dersPuanDetaylar as $ders): ?>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($ders['tarih'])); ?></td>
+                                <td style="padding: 10px;"><?php echo htmlspecialchars($ders['kategori_adi']); ?></td>
+                                <td style="padding: 10px;"><?php echo htmlspecialchars($ders['aciklama']); ?></td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; color: #2196F3;">
+                                    <?php echo $ders['puan']; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #e3f2fd; font-weight: bold;">
+                                <td colspan="3" style="padding: 10px; text-align: right;">TOPLAM:</td>
+                                <td style="padding: 10px; text-align: center; color: #2196F3; font-size: 1.2em;">
+                                    <?php echo $normalDersPuan; ?>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <?php endif; ?>
+
+                    <?php if(!empty($ilaveDersPuanDetaylar)): ?>
+                    <h5 style="color: #2196F3; margin-top: 20px;">İlave Ders Puanları</h5>
                     <table style="width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr style="background: #2196F3; color: white;">
@@ -676,6 +742,13 @@ require_once 'config/header.php';
                             </tr>
                         </tfoot>
                     </table>
+                    <?php endif; ?>
+
+                    <?php if(!empty($dersPuanDetaylar) && !empty($ilaveDersPuanDetaylar)): ?>
+                    <div style="margin-top: 15px; padding: 15px; background: #e3f2fd; border-radius: 5px; text-align: center;">
+                        <strong style="color: #2196F3; font-size: 1.3em;">GENEL TOPLAM: <?php echo $normalDersPuan + $ilaveDersPuan; ?> PUAN</strong>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
 
@@ -715,8 +788,8 @@ require_once 'config/header.php';
             }
         }
 
-        function toggleIlaveDersPuanDetay() {
-            const detayDiv = document.getElementById('ilaveDersPuanDetayDiv');
+        function toggleDersPuanDetay() {
+            const detayDiv = document.getElementById('dersPuanDetayDiv');
             if (detayDiv) {
                 if (detayDiv.style.display === 'none') {
                     detayDiv.style.display = 'block';
@@ -733,7 +806,7 @@ require_once 'config/header.php';
                 namazDetayDiv.setAttribute('data-was-hidden', namazDetayDiv.style.display === 'none' ? 'true' : 'false');
                 namazDetayDiv.style.display = 'block';
             }
-            const dersDetayDiv = document.getElementById('ilaveDersPuanDetayDiv');
+            const dersDetayDiv = document.getElementById('dersPuanDetayDiv');
             if (dersDetayDiv) {
                 dersDetayDiv.setAttribute('data-was-hidden', dersDetayDiv.style.display === 'none' ? 'true' : 'false');
                 dersDetayDiv.style.display = 'block';
@@ -746,7 +819,7 @@ require_once 'config/header.php';
             if (namazDetayDiv && namazDetayDiv.getAttribute('data-was-hidden') === 'true') {
                 namazDetayDiv.style.display = 'none';
             }
-            const dersDetayDiv = document.getElementById('ilaveDersPuanDetayDiv');
+            const dersDetayDiv = document.getElementById('dersPuanDetayDiv');
             if (dersDetayDiv && dersDetayDiv.getAttribute('data-was-hidden') === 'true') {
                 dersDetayDiv.style.display = 'none';
             }
