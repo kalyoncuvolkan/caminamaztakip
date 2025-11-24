@@ -64,7 +64,8 @@ if($ay) {
     // Öğrencinin toplam puanını hesapla (namaz + ilave namaz puan + ilave ders puan)
     $ilavePuanStmt = $pdo->prepare("
         SELECT
-            COALESCE(SUM(CASE WHEN kategori = 'Namaz' THEN puan ELSE 0 END), 0) as ilave_namaz_puan,
+            COALESCE(SUM(CASE WHEN kategori = 'Namaz' AND puan > 0 THEN puan ELSE 0 END), 0) as ilave_namaz_puan,
+            COALESCE(SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END), 0) as ceza_puan,
             COALESCE(SUM(CASE WHEN kategori = 'Ders' THEN puan ELSE 0 END), 0) as ilave_ders_puan
         FROM ilave_puanlar
         WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ?
@@ -72,22 +73,33 @@ if($ay) {
     $ilavePuanStmt->execute([$ogrenci_id, $yil, $ay]);
     $ilavePuanlar = $ilavePuanStmt->fetch();
     $ilaveNamazPuan = $ilavePuanlar['ilave_namaz_puan'] ?? 0;
+    $cezaPuan = $ilavePuanlar['ceza_puan'] ?? 0;
     $ilaveDersPuan = $ilavePuanlar['ilave_ders_puan'] ?? 0;
-    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $ilaveDersPuan;
+    $toplamPuan = ($ozetRapor['toplam'] ?? 0) + $ilaveNamazPuan + $cezaPuan + $ilaveDersPuan;
 
-    // İlave namaz puan detaylarını çek (hem eklenmiş hem silinmiş puanlar)
+    // İlave namaz puan detaylarını çek (sadece pozitif puanlar)
     $ilaveNamazPuanDetayStmt = $pdo->prepare("
         SELECT puan, aciklama, tarih, 'eklendi' as durum
         FROM ilave_puanlar
-        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz' AND puan > 0
         UNION ALL
         SELECT -puan as puan, CONCAT(aciklama, ' (Silindi: ', silme_nedeni, ')') as aciklama, tarih, 'silindi' as durum
         FROM ilave_puan_silme_gecmisi
-        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz'
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND kategori = 'Namaz' AND puan > 0
         ORDER BY tarih DESC
     ");
     $ilaveNamazPuanDetayStmt->execute([$ogrenci_id, $yil, $ay, $ogrenci_id, $yil, $ay]);
     $ilaveNamazPuanDetaylar = $ilaveNamazPuanDetayStmt->fetchAll();
+
+    // Ceza puanı detaylarını çek (sadece negatif puanlar - hem Namaz hem Ders)
+    $cezaPuanDetayStmt = $pdo->prepare("
+        SELECT puan, aciklama, tarih, kategori
+        FROM ilave_puanlar
+        WHERE ogrenci_id = ? AND YEAR(tarih) = ? AND MONTH(tarih) = ? AND puan < 0
+        ORDER BY tarih DESC
+    ");
+    $cezaPuanDetayStmt->execute([$ogrenci_id, $yil, $ay]);
+    $cezaPuanDetaylar = $cezaPuanDetayStmt->fetchAll();
 
     // İlave ders puan detaylarını çek
     $ilaveDersPuanDetayStmt = $pdo->prepare("
@@ -622,6 +634,17 @@ require_once 'config/header.php';
                         </small>
                         <?php endif; ?>
                     </div>
+                    <?php if($cezaPuan < 0): ?>
+                    <div class="ozet-kutu" style="background: #f8d7da; border: 2px solid #dc3545; cursor: pointer;" onclick="toggleCezaPuanDetay()">
+                        <span class="etiket">Ceza Puanı:</span>
+                        <span class="deger" style="color: #dc3545;"><?php echo $cezaPuan; ?></span>
+                        <?php if(!empty($cezaPuanDetaylar)): ?>
+                        <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
+                            ▼ Detay için tıklayın
+                        </small>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
                     <div class="ozet-kutu" style="background: #e3f2fd; border: 2px solid #2196F3; cursor: pointer;" onclick="toggleDersPuanDetay()">
                         <span class="etiket">Ders Puanı:</span>
                         <span class="deger" style="color: #2196F3;"><?php echo ($normalDersPuan ?? 0) + ($ilaveDersPuan ?? 0); ?></span>
@@ -667,6 +690,46 @@ require_once 'config/header.php';
                                 <td colspan="2" style="padding: 10px; text-align: right;">TOPLAM:</td>
                                 <td style="padding: 10px; text-align: center; color: #28a745; font-size: 1.2em;">
                                     +<?php echo $ilaveNamazPuan; ?>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <?php endif; ?>
+
+                <?php if(!empty($cezaPuanDetaylar)): ?>
+                <div id="cezaPuanDetayDiv" style="display: none; margin-top: 20px; background: #f8f9fa; padding: 20px; border-radius: 10px; border: 2px solid #dc3545;">
+                    <h4 style="margin-top: 0; color: #dc3545;"><span class="no-print">⚠️ </span>Ceza Puanı Detayları</h4>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: #dc3545; color: white;">
+                                <th style="padding: 10px; text-align: left;">Tarih</th>
+                                <th style="padding: 10px; text-align: left;">Kategori</th>
+                                <th style="padding: 10px; text-align: left;">Açıklama</th>
+                                <th style="padding: 10px; text-align: center;">Puan</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach($cezaPuanDetaylar as $detay): ?>
+                            <tr style="border-bottom: 1px solid #ddd; background: #fff3cd;">
+                                <td style="padding: 10px;"><?php echo date('d.m.Y', strtotime($detay['tarih'])); ?></td>
+                                <td style="padding: 10px;">
+                                    <span style="padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; background: <?php echo $detay['kategori'] == 'Namaz' ? '#e3f2fd' : '#fff3e0'; ?>; color: <?php echo $detay['kategori'] == 'Namaz' ? '#1976d2' : '#f57c00'; ?>;">
+                                        <?php echo $detay['kategori'] == 'Namaz' ? '🕌 Namaz' : '📚 Ders'; ?>
+                                    </span>
+                                </td>
+                                <td style="padding: 10px;"><?php echo htmlspecialchars($detay['aciklama']); ?></td>
+                                <td style="padding: 10px; text-align: center; font-weight: bold; color: #dc3545;">
+                                    <?php echo $detay['puan']; ?>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: #f8d7da; font-weight: bold;">
+                                <td colspan="3" style="padding: 10px; text-align: right;">TOPLAM:</td>
+                                <td style="padding: 10px; text-align: center; color: #dc3545; font-size: 1.2em;">
+                                    <?php echo $cezaPuan; ?>
                                 </td>
                             </tr>
                         </tfoot>
@@ -779,6 +842,17 @@ require_once 'config/header.php';
     <script>
         function toggleIlaveNamazPuanDetay() {
             const detayDiv = document.getElementById('ilaveNamazPuanDetayDiv');
+            if (detayDiv) {
+                if (detayDiv.style.display === 'none') {
+                    detayDiv.style.display = 'block';
+                } else {
+                    detayDiv.style.display = 'none';
+                }
+            }
+        }
+
+        function toggleCezaPuanDetay() {
+            const detayDiv = document.getElementById('cezaPuanDetayDiv');
             if (detayDiv) {
                 if (detayDiv.style.display === 'none') {
                     detayDiv.style.display = 'block';
