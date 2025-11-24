@@ -176,7 +176,8 @@ require_once 'config/header.php';
                                     $onceki_kategori = $sablon['kategori'];
                                 }
                             ?>
-                                <option value='<?php echo json_encode(['kategori' => $sablon['kategori'], 'puan' => $sablon['puan'], 'aciklama' => $sablon['baslik']]); ?>'>
+                                <option value='<?php echo json_encode(['kategori' => $sablon['kategori'], 'puan' => $sablon['puan'], 'aciklama' => $sablon['baslik']]); ?>'
+                                        data-puan-tip="<?php echo $sablon['puan'] > 0 ? 'pozitif' : 'negatif'; ?>">
                                     <?php echo $sablon['baslik']; ?> (<?php echo $sablon['puan'] > 0 ? '+' : ''; ?><?php echo $sablon['puan']; ?> puan)
                                 </option>
                             <?php endforeach; ?>
@@ -219,6 +220,24 @@ require_once 'config/header.php';
                         💾 Puanı Kaydet
                     </button>
                 </form>
+
+                <style>
+                /* Dropdown option renkleri */
+                #puanSablon option[data-puan-tip="pozitif"] {
+                    background-color: #d4edda;
+                    color: #155724;
+                    font-weight: 600;
+                }
+                #puanSablon option[data-puan-tip="negatif"] {
+                    background-color: #f8d7da;
+                    color: #721c24;
+                    font-weight: 600;
+                }
+                #puanSablon optgroup {
+                    font-weight: bold;
+                    font-style: normal;
+                }
+                </style>
 
                 <script>
                 // Ön tanımlı puan seçildiğinde form alanlarını doldur
