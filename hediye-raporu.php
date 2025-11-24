@@ -44,58 +44,79 @@ if (!empty($hesaplama_turu) && $odul_birimi > 0) {
         $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     } elseif ($hesaplama_turu === 'ders_puani') {
-        // Ders puanına göre hesaplama
-        $stmt = $pdo->prepare("
-            SELECT
-                o.id,
-                o.ad_soyad,
-                COALESCE(SUM(ip.puan), 0) as ders_puani,
-                (COALESCE(SUM(ip.puan), 0) * ?) as odul_miktari
-            FROM ogrenciler o
-            LEFT JOIN ilave_puanlar ip ON o.id = ip.ogrenci_id
-                AND ip.kategori = 'Ders'
-                AND YEAR(ip.tarih) = ?
-                AND MONTH(ip.tarih) = ?
-            WHERE o.aktif = 1
-            GROUP BY o.id, o.ad_soyad
-            HAVING ders_puani > 0
-            ORDER BY ders_puani DESC
-        ");
-        $stmt->execute([$odul_birimi, $yil, $ay]);
-        $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-    } elseif ($hesaplama_turu === 'toplam_puan') {
-        // Toplam puana göre hesaplama (namazlar + ilave puanlar + ders puanları)
+        // Ders puanına göre hesaplama (normal dersler + ilave ders puanları)
         $stmt = $pdo->prepare("
             SELECT
                 o.id,
                 o.ad_soyad,
                 (
-                    COALESCE(COUNT(DISTINCT n.id), 0) +
-                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan > 0 THEN ip.puan ELSE 0 END), 0) +
-                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan < 0 THEN ip.puan ELSE 0 END), 0) +
-                    COALESCE(SUM(CASE WHEN ip.kategori = 'Ders' THEN ip.puan ELSE 0 END), 0)
-                ) as toplam_puan,
+                    COALESCE((SELECT SUM(d.puan)
+                        FROM ogrenci_dersler od
+                        JOIN dersler d ON od.ders_id = d.id
+                        WHERE od.ogrenci_id = o.id
+                            AND od.durum = 'Tamamlandi'
+                            AND od.puan_verildi = 1
+                            AND YEAR(od.verme_tarihi) = ?
+                            AND MONTH(od.verme_tarihi) = ?), 0) +
+                    COALESCE((SELECT SUM(puan)
+                        FROM ilave_puanlar
+                        WHERE ogrenci_id = o.id
+                            AND kategori = 'Ders'
+                            AND YEAR(tarih) = ?
+                            AND MONTH(tarih) = ?), 0)
+                ) as ders_puani,
                 (
-                    (COALESCE(COUNT(DISTINCT n.id), 0) +
-                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan > 0 THEN ip.puan ELSE 0 END), 0) +
-                    COALESCE(SUM(CASE WHEN ip.kategori = 'Namaz' AND ip.puan < 0 THEN ip.puan ELSE 0 END), 0) +
-                    COALESCE(SUM(CASE WHEN ip.kategori = 'Ders' THEN ip.puan ELSE 0 END), 0))
+                    (COALESCE((SELECT SUM(d.puan)
+                        FROM ogrenci_dersler od
+                        JOIN dersler d ON od.ders_id = d.id
+                        WHERE od.ogrenci_id = o.id
+                            AND od.durum = 'Tamamlandi'
+                            AND od.puan_verildi = 1
+                            AND YEAR(od.verme_tarihi) = ?
+                            AND MONTH(od.verme_tarihi) = ?), 0) +
+                    COALESCE((SELECT SUM(puan)
+                        FROM ilave_puanlar
+                        WHERE ogrenci_id = o.id
+                            AND kategori = 'Ders'
+                            AND YEAR(tarih) = ?
+                            AND MONTH(tarih) = ?), 0))
                     * ?
                 ) as odul_miktari
             FROM ogrenciler o
-            LEFT JOIN namaz_kayitlari n ON o.id = n.ogrenci_id
-                AND YEAR(n.tarih) = ?
-                AND MONTH(n.tarih) = ?
-            LEFT JOIN ilave_puanlar ip ON o.id = ip.ogrenci_id
-                AND YEAR(ip.tarih) = ?
-                AND MONTH(ip.tarih) = ?
             WHERE o.aktif = 1
-            GROUP BY o.id, o.ad_soyad
+            HAVING ders_puani > 0
+            ORDER BY ders_puani DESC
+        ");
+        $stmt->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $odul_birimi]);
+        $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } elseif ($hesaplama_turu === 'toplam_puan') {
+        // Toplam puana göre hesaplama (namazlar + ilave puanlar + normal dersler + ilave ders puanları)
+        $stmt = $pdo->prepare("
+            SELECT
+                o.id,
+                o.ad_soyad,
+                (
+                    COALESCE((SELECT COUNT(*) FROM namaz_kayitlari WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                    COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                    COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                    COALESCE((SELECT SUM(d.puan) FROM ogrenci_dersler od JOIN dersler d ON od.ders_id = d.id WHERE od.ogrenci_id = o.id AND od.durum = 'Tamamlandi' AND od.puan_verildi = 1 AND YEAR(od.verme_tarihi) = ? AND MONTH(od.verme_tarihi) = ?), 0) +
+                    COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0)
+                ) as toplam_puan,
+                (
+                    (COALESCE((SELECT COUNT(*) FROM namaz_kayitlari WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                    COALESCE((SELECT SUM(CASE WHEN puan > 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Namaz' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                    COALESCE((SELECT SUM(CASE WHEN puan < 0 THEN puan ELSE 0 END) FROM ilave_puanlar WHERE ogrenci_id = o.id AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0) +
+                    COALESCE((SELECT SUM(d.puan) FROM ogrenci_dersler od JOIN dersler d ON od.ders_id = d.id WHERE od.ogrenci_id = o.id AND od.durum = 'Tamamlandi' AND od.puan_verildi = 1 AND YEAR(od.verme_tarihi) = ? AND MONTH(od.verme_tarihi) = ?), 0) +
+                    COALESCE((SELECT SUM(puan) FROM ilave_puanlar WHERE ogrenci_id = o.id AND kategori = 'Ders' AND YEAR(tarih) = ? AND MONTH(tarih) = ?), 0))
+                    * ?
+                ) as odul_miktari
+            FROM ogrenciler o
+            WHERE o.aktif = 1
             HAVING toplam_puan > 0
             ORDER BY toplam_puan DESC
         ");
-        $stmt->execute([$odul_birimi, $yil, $ay, $yil, $ay]);
+        $stmt->execute([$yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $yil, $ay, $odul_birimi]);
         $sonuclar = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
